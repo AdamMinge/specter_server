@@ -3,16 +3,15 @@
 
 /* ------------------------------------ Qt ---------------------------------- */
 #include <QHostAddress>
-#include <QThread>
 /* --------------------------------- Standard ------------------------------- */
 #include <memory>
-#include <thread>
 /* ----------------------------------- Local -------------------------------- */
 #include "specter/export.h"
 /* -------------------------------------------------------------------------- */
 
 namespace grpc {
 
+class Alarm;
 class Server;
 class Service;
 class ServerCompletionQueue;
@@ -49,7 +48,6 @@ private:
   std::list<std::unique_ptr<Service>> m_services;
   std::unique_ptr<grpc::Server> m_server;
   std::unique_ptr<grpc::ServerCompletionQueue> m_queue;
-  std::vector<QThread *> m_threads;
 };
 
 template<IsValidService SERVICE, typename... ARGS>

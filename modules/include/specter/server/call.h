@@ -2,6 +2,7 @@
 #define SPECTER_SERVER_CALL_H
 
 /* ----------------------------------- GRPC --------------------------------- */
+#include <grpc++/alarm.h>
 #include <grpc++/grpc++.h>
 /* --------------------------------- Standard ------------------------------- */
 #include <memory>
@@ -158,6 +159,9 @@ protected:
 
   virtual std::unique_ptr<StreamCallData> clone() const = 0;
 
+private:
+  void scheduleNextCheck();
+
 protected:
   Service *m_service;
   grpc::ServerCompletionQueue *m_queue;
@@ -168,6 +172,7 @@ protected:
   grpc::ServerContext m_context;
   Request m_request;
   grpc::ServerAsyncWriter<Response> m_responder;
+  grpc::Alarm m_alarm;
 };
 
 template<typename SERVICE, typename REQUEST, typename RESPONSE>
@@ -195,6 +200,8 @@ void StreamCallData<SERVICE, REQUEST, RESPONSE>::proceed() {
       if (const auto response = std::get_if<Response>(&*result); response) {
         m_responder.Write(*response, static_cast<void *>(&m_tag));
       }
+    } else {
+      scheduleNextCheck();
     }
 
     m_status = CallStatus::Processing;
@@ -235,6 +242,13 @@ template<typename SERVICE, typename REQUEST, typename RESPONSE>
 grpc::ServerCompletionQueue *
 StreamCallData<SERVICE, REQUEST, RESPONSE>::getQueue() const {
   return m_queue;
+}
+
+template<typename SERVICE, typename REQUEST, typename RESPONSE>
+void StreamCallData<SERVICE, REQUEST, RESPONSE>::scheduleNextCheck() {
+  auto deadline =
+    std::chrono::system_clock::now() + std::chrono::milliseconds(100);
+  m_alarm.Set(m_queue, deadline, static_cast<void *>(&m_tag));
 }
 
 }// namespace specter

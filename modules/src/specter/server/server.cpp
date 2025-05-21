@@ -12,6 +12,7 @@ namespace specter {
 
 /* ----------------------------------- Server ------------------------------- */
 
+
 Server::Server() = default;
 
 Server::~Server() {
@@ -44,10 +45,9 @@ void Server::startLoop() {
 
   for (const auto &service : m_services) service->start(m_queue.get());
   while (true) {
-    if(!m_queue->Next(&tag, &ok))
-      break;
+    if (!m_queue->Next(&tag, &ok)) break;
 
-    if(ok) {
+    if (ok) {
       auto call_tag = static_cast<CallTag *>(tag);
       auto callable = static_cast<Callable *>(call_tag->callable);
       if (callable) { callable->proceed(); }

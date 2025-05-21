@@ -10,4 +10,4 @@ Callable::Callable() = default;
 
 Callable::~Callable() = default;
 
-}  // namespace specter
+}// namespace specter

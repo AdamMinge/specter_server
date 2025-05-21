@@ -188,9 +188,10 @@ RecorderListenCommandsCall::clone() const {
 
 RecorderListenCommandsCall::ProcessResult
 RecorderListenCommandsCall::process(const Request &request) const {
-  const auto recorded_action = m_recorder_queue->waitPopAction();
-  const auto response = recorded_action.visit(*m_mapper);
+  if (m_recorder_queue->isEmpty()) return {};
 
+  const auto recorded_action = m_recorder_queue->popAction();
+  const auto response = recorded_action.visit(*m_mapper);
   return response;
 }
 

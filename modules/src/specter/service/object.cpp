@@ -505,7 +505,8 @@ ObjectListenObjectChangesCall::ObjectListenObjectChangesCall(
   grpc::ServerCompletionQueue *queue)
     : StreamCallData(
         service, queue, CallTag{this},
-        &specter_proto::ObjectService::AsyncService::RequestListenObjectChanges),
+        &specter_proto::ObjectService::AsyncService::
+          RequestListenObjectChanges),
       m_observer(std::make_unique<ObjectObserver>()),
       m_observer_queue(std::make_unique<ObjectObserverQueue>()),
       m_mapper(std::make_unique<ObservedActionsMapper>()) {
@@ -519,7 +520,9 @@ ObjectListenObjectChangesCall::~ObjectListenObjectChangesCall() = default;
 
 ObjectListenObjectChangesCall::ProcessResult
 ObjectListenObjectChangesCall::process(const Request &request) const {
-  const auto observer_action = m_observer_queue->waitPopAction();
+  if (m_observer_queue->isEmpty()) return {};
+
+  const auto observer_action = m_observer_queue->popAction();
   const auto response = observer_action.visit(*m_mapper);
 
   return response;

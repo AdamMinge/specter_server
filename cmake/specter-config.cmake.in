@@ -1,0 +1,32 @@
+# ----------------------------------------------------------------------- #
+# -------------- Set config_name dependent on libraries type ------------ #
+# ----------------------------------------------------------------------- #
+if(specter_STATIC_LIBRARIES)
+    set(config_name "static")
+else()
+    set(config_name "shared")
+endif()
+# ----------------------------------------------------------------------- #
+# -------------------- Load targets and dependencies -------------------- #
+# ----------------------------------------------------------------------- #
+set(targets_config_file ${CMAKE_CURRENT_LIST_DIR}/specter-${config_name}-targets.cmake)
+set(specter_FOUND TRUE)
+
+if(EXISTS ${targets_config_file})
+    include(${targets_config_file})
+    include("${CMAKE_CURRENT_LIST_DIR}/specter-config-dependencies.cmake")
+else()
+    set(FIND_specter_ERROR "Requested specter configuration (${config_name}) was not found")
+    set(specter_FOUND FALSE)
+endif()
+# ----------------------------------------------------------------------- #
+# ------------=------------- Display all errors ------------------------- #
+# ----------------------------------------------------------------------- #
+if (NOT specter_FOUND)
+    if(specter_FIND_REQUIRED)
+        message(FATAL_ERROR "${FIND_specter_ERROR}")
+    elseif(NOT specter_FIND_QUIETLY)
+        message(STATUS "${FIND_specter_ERROR}")
+    endif()
+endif()
+# ----------------------------------------------------------------------- #

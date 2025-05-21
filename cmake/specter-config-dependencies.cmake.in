@@ -1,0 +1,10 @@
+set(FIND_specter_DEPENDENCIES_NOTFOUND)
+
+find_package(Qt6 COMPONENTS Core Widgets Network)
+
+if(FIND_specter_DEPENDENCIES_NOTFOUND)
+  set(FIND_specter_ERROR
+      "specter found but some of its dependencies are missing (${FIND_specter_DEPENDENCIES_NOTFOUND})"
+  )
+  set(specter_FOUND FALSE)
+endif()

@@ -196,23 +196,23 @@ private:
   [[nodiscard]] Response properties(const QObject *object) const;
 };
 
-/* ------------------------- ObjectListenObjectChangesCall ------------------ */
+/* ------------------------- ObjectListenTreeChangesCall ------------------ */
 
-using ObjectListenObjectChangesCallData = StreamCallData<
+using ObjectListenTreeChangesCallData = StreamCallData<
   specter_proto::ObjectService::AsyncService, google::protobuf::Empty,
   specter_proto::ObjectChange>;
 
-class LIB_SPECTER_API ObjectListenObjectChangesCall
-    : public ObjectListenObjectChangesCallData {
+class LIB_SPECTER_API ObjectListenTreeChangesCall
+    : public ObjectListenTreeChangesCallData {
 public:
-  explicit ObjectListenObjectChangesCall(
+  explicit ObjectListenTreeChangesCall(
     specter_proto::ObjectService::AsyncService *service,
     grpc::ServerCompletionQueue *queue);
-  ~ObjectListenObjectChangesCall() override;
+  ~ObjectListenTreeChangesCall() override;
 
   ProcessResult process(const Request &request) const override;
 
-  std::unique_ptr<ObjectListenObjectChangesCallData> clone() const override;
+  std::unique_ptr<ObjectListenTreeChangesCallData> clone() const override;
 
 private:
   std::unique_ptr<ObjectObserver> m_observer;

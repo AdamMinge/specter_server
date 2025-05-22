@@ -1,5 +1,5 @@
-#ifndef SPECTER_OBSERVE_OBSERVER_H
-#define SPECTER_OBSERVE_OBSERVER_H
+#ifndef SPECTER_OBSERVE_TREE_OBSERVER_H
+#define SPECTER_OBSERVE_TREE_OBSERVER_H
 
 /* ------------------------------------ Qt ---------------------------------- */
 #include <QHash>
@@ -10,20 +10,20 @@
 #include <mutex>
 /* ----------------------------------- Local -------------------------------- */
 #include "specter/export.h"
-#include "specter/observe/action.h"
+#include "specter/observe/tree/action.h"
 #include "specter/search/query.h"
 /* -------------------------------------------------------------------------- */
 
 namespace specter {
 
-/* ------------------------------- ObjectObserver --------------------------- */
+/* -------------------------------- TreeObserver ---------------------------- */
 
-class LIB_SPECTER_API ObjectObserver : public QObject {
+class LIB_SPECTER_API TreeObserver : public QObject {
   Q_OBJECT
 
 public:
-  explicit ObjectObserver();
-  ~ObjectObserver() override;
+  explicit TreeObserver();
+  ~TreeObserver() override;
 
   void start();
   void stop();
@@ -31,7 +31,7 @@ public:
   [[nodiscard]] bool isObserving() const;
 
 Q_SIGNALS:
-  void actionReported(const ObservedAction &action);
+  void actionReported(const TreeObservedAction &action);
 
 protected:
   [[nodiscard]] bool eventFilter(QObject *object, QEvent *event) override;
@@ -48,23 +48,23 @@ private:
   QMap<QObject *, ObjectQuery> m_tracked_objects;
 };
 
-/* ----------------------------- ObjectObserverQueue ------------------------ */
+/* ----------------------------- TreeObserverQueue ------------------------ */
 
-class LIB_SPECTER_API ObjectObserverQueue {
+class LIB_SPECTER_API TreeObserverQueue {
 public:
-  explicit ObjectObserverQueue();
-  ~ObjectObserverQueue();
+  explicit TreeObserverQueue();
+  ~TreeObserverQueue();
 
-  void setObserver(ObjectObserver *observer);
+  void setObserver(TreeObserver *observer);
 
   [[nodiscard]] bool isEmpty() const;
-  [[nodiscard]] ObservedAction popAction();
-  [[nodiscard]] ObservedAction waitPopAction();
+  [[nodiscard]] TreeObservedAction popAction();
+  [[nodiscard]] TreeObservedAction waitPopAction();
 
 private:
-  ObjectObserver *m_observer;
+  TreeObserver *m_observer;
   QMetaObject::Connection m_on_action_reported;
-  QQueue<ObservedAction> m_observed_actions;
+  QQueue<TreeObservedAction> m_observed_actions;
 
   mutable std::mutex m_mutex;
   std::condition_variable m_cv;
@@ -72,4 +72,4 @@ private:
 
 }// namespace specter
 
-#endif// SPECTER_OBSERVE_OBSERVER_H
+#endif// SPECTER_OBSERVE_TREE_OBSERVER_H

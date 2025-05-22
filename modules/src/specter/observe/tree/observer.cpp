@@ -1,5 +1,5 @@
 /* ----------------------------------- Local -------------------------------- */
-#include "specter/observe/observer.h"
+#include "specter/observe/tree/observer.h"
 
 #include "specter/module.h"
 #include "specter/search/utils.h"
@@ -11,18 +11,18 @@
 
 namespace specter {
 
-/* ------------------------------- ObjectObserver --------------------------- */
+/* -------------------------------- TreeObserver ---------------------------- */
 
-ObjectObserver::ObjectObserver()
+TreeObserver::TreeObserver()
     : m_observing(false), m_check_timer(new QTimer(this)) {
   m_check_timer->setInterval(100);
   connect(
-    m_check_timer, &QTimer::timeout, this, &ObjectObserver::checkForRenames);
+    m_check_timer, &QTimer::timeout, this, &TreeObserver::checkForRenames);
 }
 
-ObjectObserver::~ObjectObserver() { stop(); }
+TreeObserver::~TreeObserver() { stop(); }
 
-void ObjectObserver::start() {
+void TreeObserver::start() {
   if (m_observing) return;
 
 
@@ -36,7 +36,7 @@ void ObjectObserver::start() {
     Qt::QueuedConnection);
 }
 
-void ObjectObserver::stop() {
+void TreeObserver::stop() {
   if (!m_observing) return;
 
 
@@ -50,16 +50,16 @@ void ObjectObserver::stop() {
     Qt::QueuedConnection);
 }
 
-bool ObjectObserver::isObserving() const { return m_observing; }
+bool TreeObserver::isObserving() const { return m_observing; }
 
-bool ObjectObserver::eventFilter(QObject *object, QEvent *event) {
+bool TreeObserver::eventFilter(QObject *object, QEvent *event) {
   switch (event->type()) {
     case QEvent::Create: {
       std::lock_guard<std::mutex> lock(m_mutex);
 
       m_tracked_objects.insert(object, searcher().getQuery(object));
 
-      Q_EMIT actionReported(ObservedAction::ObjectAdded{
+      Q_EMIT actionReported(TreeObservedAction::ObjectAdded{
         m_tracked_objects.value(object),
         m_tracked_objects.value(object->parent())});
 
@@ -70,7 +70,7 @@ bool ObjectObserver::eventFilter(QObject *object, QEvent *event) {
       std::lock_guard<std::mutex> lock(m_mutex);
 
       Q_EMIT actionReported(
-        ObservedAction::ObjectRemoved{m_tracked_objects.value(object)});
+        TreeObservedAction::ObjectRemoved{m_tracked_objects.value(object)});
 
       m_tracked_objects.remove(object);
       break;
@@ -81,7 +81,7 @@ bool ObjectObserver::eventFilter(QObject *object, QEvent *event) {
 
       if (!m_tracked_objects.contains(object)) break;
 
-      Q_EMIT actionReported(ObservedAction::ObjectReparented{
+      Q_EMIT actionReported(TreeObservedAction::ObjectReparented{
         m_tracked_objects.value(object),
         m_tracked_objects.value(object->parent())});
       break;
@@ -91,7 +91,7 @@ bool ObjectObserver::eventFilter(QObject *object, QEvent *event) {
   return QObject::eventFilter(object, event);
 }
 
-void ObjectObserver::startRenameTracker() {
+void TreeObserver::startRenameTracker() {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   m_check_timer->start();
@@ -111,14 +111,14 @@ void ObjectObserver::startRenameTracker() {
   }
 }
 
-void ObjectObserver::stopRenameTracker() {
+void TreeObserver::stopRenameTracker() {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   m_check_timer->stop();
   m_tracked_objects.clear();
 }
 
-void ObjectObserver::checkForRenames() {
+void TreeObserver::checkForRenames() {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   for (auto it = m_tracked_objects.begin(); it != m_tracked_objects.end();
@@ -132,18 +132,18 @@ void ObjectObserver::checkForRenames() {
       query = new_query;
 
       Q_EMIT actionReported(
-        ObservedAction::ObjectRenamed{old_query, new_query});
+        TreeObservedAction::ObjectRenamed{old_query, new_query});
     }
   }
 }
 
-/* ----------------------------- ObjectObserverQueue ------------------------ */
+/* ------------------------------ TreeObserverQueue ------------------------- */
 
-ObjectObserverQueue::ObjectObserverQueue() : m_observer(nullptr) {}
+TreeObserverQueue::TreeObserverQueue() : m_observer(nullptr) {}
 
-ObjectObserverQueue::~ObjectObserverQueue() = default;
+TreeObserverQueue::~TreeObserverQueue() = default;
 
-void ObjectObserverQueue::setObserver(ObjectObserver *observer) {
+void TreeObserverQueue::setObserver(TreeObserver *observer) {
   if (m_observer) {
     m_observer->disconnect(m_on_action_reported);
     m_observed_actions.clear();
@@ -153,7 +153,7 @@ void ObjectObserverQueue::setObserver(ObjectObserver *observer) {
 
   if (m_observer) {
     m_on_action_reported = QObject::connect(
-      m_observer, &ObjectObserver::actionReported,
+      m_observer, &TreeObserver::actionReported,
       [this](const auto recorder_action) {
         {
           std::lock_guard<std::mutex> lock(m_mutex);
@@ -165,18 +165,18 @@ void ObjectObserverQueue::setObserver(ObjectObserver *observer) {
   }
 }
 
-bool ObjectObserverQueue::isEmpty() const {
+bool TreeObserverQueue::isEmpty() const {
   std::lock_guard<std::mutex> lock(m_mutex);
   return m_observed_actions.empty();
 }
 
-ObservedAction ObjectObserverQueue::popAction() {
+TreeObservedAction TreeObserverQueue::popAction() {
   std::lock_guard<std::mutex> lock(m_mutex);
   Q_ASSERT(!m_observed_actions.empty());
   return m_observed_actions.takeFirst();
 }
 
-ObservedAction ObjectObserverQueue::waitPopAction() {
+TreeObservedAction TreeObserverQueue::waitPopAction() {
   std::unique_lock<std::mutex> lock(m_mutex);
   m_cv.wait(lock, [this] { return !m_observed_actions.empty(); });
 

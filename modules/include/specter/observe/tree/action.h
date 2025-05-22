@@ -1,5 +1,5 @@
-#ifndef SPECTER_OBSERVE_ACTION_H
-#define SPECTER_OBSERVE_ACTION_H
+#ifndef SPECTER_OBSERVE_TREE_ACTION_H
+#define SPECTER_OBSERVE_TREE_ACTION_H
 
 /* ------------------------------------ Qt ---------------------------------- */
 #include <QQueue>
@@ -12,9 +12,9 @@
 
 namespace specter {
 
-/* ------------------------------- ObservedAction --------------------------- */
+/* ----------------------------- TreeObservedAction ------------------------- */
 
-class LIB_SPECTER_API ObservedAction {
+class LIB_SPECTER_API TreeObservedAction {
 public:
   struct ObjectAdded {
     ObjectQuery object;
@@ -37,7 +37,7 @@ public:
 
 public:
   template<typename ACTION_SUBTYPE>
-  ObservedAction(const ACTION_SUBTYPE &action);
+  TreeObservedAction(const ACTION_SUBTYPE &action);
 
   template<typename ACTION_SUBTYPE>
   [[nodiscard]] bool is() const;
@@ -56,25 +56,25 @@ private:
 };
 
 template<typename ACTION_SUBTYPE>
-ObservedAction::ObservedAction(const ACTION_SUBTYPE &action) {
+TreeObservedAction::TreeObservedAction(const ACTION_SUBTYPE &action) {
   m_data = action;
 }
 
 template<typename ACTION_SUBTYPE>
-bool ObservedAction::is() const {
+bool TreeObservedAction::is() const {
   return std::holds_alternative<ACTION_SUBTYPE>(m_data);
 }
 
 template<typename ACTION_SUBTYPE>
-const ACTION_SUBTYPE *ObservedAction::getIf() const {
+const ACTION_SUBTYPE *TreeObservedAction::getIf() const {
   return std::get_if<ACTION_SUBTYPE>(&m_data);
 }
 
 template<typename TYPE>
-decltype(auto) ObservedAction::visit(TYPE &&visitor) const {
+decltype(auto) TreeObservedAction::visit(TYPE &&visitor) const {
   return std::visit(std::forward<TYPE>(visitor), m_data);
 }
 
 }// namespace specter
 
-#endif// SPECTER_OBSERVE_ACTION_H
+#endif// SPECTER_OBSERVE_TREE_ACTION_H

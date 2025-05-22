@@ -2,8 +2,8 @@
 #include "specter/service/object.h"
 
 #include "specter/module.h"
-#include "specter/observe/action.h"
-#include "specter/observe/observer.h"
+#include "specter/observe/tree/action.h"
+#include "specter/observe/tree/observer.h"
 #include "specter/search/utils.h"
 #include "specter/service/utils.h"
 /* ------------------------------------ Qt ---------------------------------- */
@@ -15,12 +15,12 @@
 
 namespace specter {
 
-/* --------------------------- ObservedActionsMapper ------------------------ */
+/* --------------------------- TreeObservedActionsMapper ------------------------ */
 
-class ObservedActionsMapper {
+class TreeObservedActionsMapper {
 public:
   specter_proto::ObjectChange
-  operator()(const ObservedAction::ObjectAdded &action) const {
+  operator()(const TreeObservedAction::ObjectAdded &action) const {
     specter_proto::ObjectChange response;
     auto added = response.mutable_added();
     added->mutable_object()->set_query(action.object.toString().toStdString());
@@ -29,7 +29,7 @@ public:
   }
 
   specter_proto::ObjectChange
-  operator()(const ObservedAction::ObjectRemoved &action) const {
+  operator()(const TreeObservedAction::ObjectRemoved &action) const {
     specter_proto::ObjectChange response;
     auto removed = response.mutable_removed();
     removed->mutable_object()->set_query(
@@ -38,7 +38,7 @@ public:
   }
 
   specter_proto::ObjectChange
-  operator()(const ObservedAction::ObjectReparented &action) const {
+  operator()(const TreeObservedAction::ObjectReparented &action) const {
     specter_proto::ObjectChange response;
     auto reparented = response.mutable_reparented();
     reparented->mutable_object()->set_query(
@@ -49,7 +49,7 @@ public:
   }
 
   specter_proto::ObjectChange
-  operator()(const ObservedAction::ObjectRenamed &action) const {
+  operator()(const TreeObservedAction::ObjectRenamed &action) const {
     specter_proto::ObjectChange response;
     auto renamed = response.mutable_renamed();
     renamed->mutable_old_object()->set_query(
@@ -506,9 +506,9 @@ ObjectListenTreeChangesCall::ObjectListenTreeChangesCall(
     : StreamCallData(
         service, queue, CallTag{this},
         &specter_proto::ObjectService::AsyncService::RequestListenTreeChanges),
-      m_observer(std::make_unique<ObjectObserver>()),
-      m_observer_queue(std::make_unique<ObjectObserverQueue>()),
-      m_mapper(std::make_unique<ObservedActionsMapper>()) {
+      m_observer(std::make_unique<TreeObserver>()),
+      m_observer_queue(std::make_unique<TreeObserverQueue>()),
+      m_mapper(std::make_unique<TreeObservedActionsMapper>()) {
 
   m_observer_queue->setObserver(m_observer.get());
   m_observer->moveToThread(qApp->thread());

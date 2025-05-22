@@ -1,9 +1,9 @@
 /* ----------------------------------- Local -------------------------------- */
-#include "specter/observe/action.h"
+#include "specter/observe/tree/action.h"
 /* -------------------------------------------------------------------------- */
 
 namespace specter {
 
-std::size_t ObservedAction::index() const { return m_data.index(); }
+std::size_t TreeObservedAction::index() const { return m_data.index(); }
 
 }// namespace specter

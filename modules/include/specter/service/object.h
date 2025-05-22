@@ -15,9 +15,9 @@
 namespace specter {
 
 class ObjectQuery;
-class ObjectObserver;
-class ObjectObserverQueue;
-class ObservedActionsMapper;
+class TreeObserver;
+class TreeObserverQueue;
+class TreeObservedActionsMapper;
 
 /* ------------------------------- ObjectGetTreeCall ------------------------ */
 
@@ -215,9 +215,9 @@ public:
   std::unique_ptr<ObjectListenTreeChangesCallData> clone() const override;
 
 private:
-  std::unique_ptr<ObjectObserver> m_observer;
-  std::unique_ptr<ObjectObserverQueue> m_observer_queue;
-  std::unique_ptr<ObservedActionsMapper> m_mapper;
+  std::unique_ptr<TreeObserver> m_observer;
+  std::unique_ptr<TreeObserverQueue> m_observer_queue;
+  std::unique_ptr<TreeObservedActionsMapper> m_mapper;
 };
 
 /* ------------------------------- ObjectService -------------------------- */

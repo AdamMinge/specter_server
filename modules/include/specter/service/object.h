@@ -15,9 +15,14 @@
 namespace specter {
 
 class ObjectQuery;
+
 class TreeObserver;
 class TreeObserverQueue;
 class TreeObservedActionsMapper;
+
+class PropertyObserver;
+class PropertyObserverQueue;
+class PropertyObservedActionsMapper;
 
 /* ------------------------------- ObjectGetTreeCall ------------------------ */
 
@@ -218,6 +223,30 @@ private:
   std::unique_ptr<TreeObserver> m_observer;
   std::unique_ptr<TreeObserverQueue> m_observer_queue;
   std::unique_ptr<TreeObservedActionsMapper> m_mapper;
+};
+
+/* ----------------------- ObjectListenPropertyChangesCall ---------------- */
+
+using ObjectListenPropertyChangesCallData = StreamCallData<
+  specter_proto::ObjectService::AsyncService, specter_proto::Object,
+  specter_proto::PropertyChange>;
+
+class LIB_SPECTER_API ObjectListenPropertyChangesCall
+    : public ObjectListenPropertyChangesCallData {
+public:
+  explicit ObjectListenPropertyChangesCall(
+    specter_proto::ObjectService::AsyncService *service,
+    grpc::ServerCompletionQueue *queue);
+  ~ObjectListenPropertyChangesCall() override;
+
+  ProcessResult process(const Request &request) const override;
+
+  std::unique_ptr<ObjectListenPropertyChangesCallData> clone() const override;
+
+private:
+  std::unique_ptr<PropertyObserver> m_observer;
+  std::unique_ptr<PropertyObserverQueue> m_observer_queue;
+  std::unique_ptr<PropertyObservedActionsMapper> m_mapper;
 };
 
 /* ------------------------------- ObjectService -------------------------- */

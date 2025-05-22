@@ -1,0 +1,174 @@
+/* ----------------------------------- Local -------------------------------- */
+#include "specter/observe/property/observer.h"
+
+#include "specter/module.h"
+#include "specter/search/utils.h"
+/* ------------------------------------ Qt ---------------------------------- */
+#include <QApplication>
+#include <QMetaProperty>
+/* --------------------------------- Standard ------------------------------- */
+#include <queue>
+/* -------------------------------------------------------------------------- */
+
+namespace specter {
+
+/* ------------------------------ PropertyObserver -------------------------- */
+
+PropertyObserver::PropertyObserver()
+    : m_object(nullptr), m_observing(false), m_check_timer(new QTimer(this)) {
+  m_check_timer->setInterval(100);
+  connect(
+    m_check_timer, &QTimer::timeout, this, &PropertyObserver::checkForChanges);
+}
+
+PropertyObserver::~PropertyObserver() { stop(); }
+
+void PropertyObserver::setObject(QObject *object) {
+  auto was_observing = isObserving();
+
+  if (was_observing) stop();
+  m_object = object;
+  if (was_observing) start();
+}
+
+QObject *PropertyObserver::getObject() const { return m_object; }
+
+void PropertyObserver::start() {
+  if (m_observing) return;
+
+  QMetaObject::invokeMethod(
+    qApp,
+    [this]() {
+      m_observing = true;
+      startChangesTracker();
+    },
+    Qt::QueuedConnection);
+}
+
+void PropertyObserver::stop() {
+  if (!m_observing) return;
+
+  QMetaObject::invokeMethod(
+    qApp,
+    [this]() {
+      m_observing = false;
+      stopChangesTracker();
+    },
+    Qt::QueuedConnection);
+}
+
+bool PropertyObserver::isObserving() const { return m_observing; }
+
+void PropertyObserver::startChangesTracker() {
+  std::lock_guard<std::mutex> lock(m_mutex);
+
+  m_check_timer->start();
+
+  if (m_object) initTrackedProperties();
+}
+
+void PropertyObserver::stopChangesTracker() {
+  std::lock_guard<std::mutex> lock(m_mutex);
+
+  m_check_timer->stop();
+  m_tracked_properties.clear();
+}
+
+void PropertyObserver::checkForChanges() {
+  std::lock_guard<std::mutex> lock(m_mutex);
+  if (!m_object) return;
+
+  auto current_properties = std::map<QString, QVariant>{};
+  auto current_meta = m_object->metaObject();
+
+  for (int i = 0; i < current_meta->propertyCount(); ++i) {
+    const auto prop_name = QString(current_meta->property(i).name());
+    current_properties[prop_name] =
+      m_object->property(prop_name.toStdString().c_str());
+  }
+
+  for (const auto &old_prop : m_tracked_properties) {
+    if (!current_properties.contains(old_prop.first)) {
+      Q_EMIT actionReported(
+        PropertyObservedAction::PropertyRemoved{old_prop.first});
+    }
+  }
+
+  for (const auto &cur_prop : current_properties) {
+    if (!m_tracked_properties.contains(cur_prop.first)) {
+      Q_EMIT actionReported(
+        PropertyObservedAction::PropertyAdded{cur_prop.first, cur_prop.second});
+    } else {
+      const auto &old_value = m_tracked_properties[cur_prop.first];
+      if (old_value != cur_prop.second) {
+        Q_EMIT actionReported(PropertyObservedAction::PropertyUpdated{
+          cur_prop.first, old_value, cur_prop.second});
+      }
+    }
+  }
+
+  m_tracked_properties = current_properties;
+}
+
+void PropertyObserver::initTrackedProperties() {
+  auto unique_properties = std::set<QString>{};
+  auto meta_object = m_object->metaObject();
+  for (auto i = 0; i < meta_object->propertyCount(); ++i) {
+    const auto name = meta_object->property(i).name();
+    unique_properties.insert(name);
+  }
+
+  for (auto unique_property : unique_properties) {
+    const auto value =
+      m_object->property(unique_property.toStdString().c_str());
+    m_tracked_properties[unique_property] = value;
+  }
+}
+
+/* ---------------------------- PropertyObserverQueue ----------------------- */
+
+PropertyObserverQueue::PropertyObserverQueue() : m_observer(nullptr) {}
+
+PropertyObserverQueue::~PropertyObserverQueue() = default;
+
+void PropertyObserverQueue::setObserver(PropertyObserver *observer) {
+  if (m_observer) {
+    m_observer->disconnect(m_on_action_reported);
+    m_observed_actions.clear();
+  }
+
+  m_observer = observer;
+
+  if (m_observer) {
+    m_on_action_reported = QObject::connect(
+      m_observer, &PropertyObserver::actionReported,
+      [this](const auto recorder_action) {
+        {
+          std::lock_guard<std::mutex> lock(m_mutex);
+          m_observed_actions.push_back(recorder_action);
+        }
+
+        m_cv.notify_one();
+      });
+  }
+}
+
+bool PropertyObserverQueue::isEmpty() const {
+  std::lock_guard<std::mutex> lock(m_mutex);
+  return m_observed_actions.empty();
+}
+
+PropertyObservedAction PropertyObserverQueue::popAction() {
+  std::lock_guard<std::mutex> lock(m_mutex);
+  Q_ASSERT(!m_observed_actions.empty());
+  return m_observed_actions.takeFirst();
+}
+
+PropertyObservedAction PropertyObserverQueue::waitPopAction() {
+  std::unique_lock<std::mutex> lock(m_mutex);
+  m_cv.wait(lock, [this] { return !m_observed_actions.empty(); });
+
+  return m_observed_actions.takeFirst();
+}
+
+}// namespace specter

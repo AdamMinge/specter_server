@@ -1,5 +1,5 @@
-#ifndef SPECTER_OBSERVE_TREE_OBSERVER_H
-#define SPECTER_OBSERVE_TREE_OBSERVER_H
+#ifndef SPECTER_OBSERVE_OBSERVER_H
+#define SPECTER_OBSERVE_OBSERVER_H
 
 /* ------------------------------------ Qt ---------------------------------- */
 #include <QHash>
@@ -72,4 +72,4 @@ private:
 
 }// namespace specter
 
-#endif// SPECTER_OBSERVE_TREE_OBSERVER_H
+#endif// SPECTER_OBSERVE_OBSERVER_H

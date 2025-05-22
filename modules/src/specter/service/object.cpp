@@ -2,6 +2,8 @@
 #include "specter/service/object.h"
 
 #include "specter/module.h"
+#include "specter/observe/property/action.h"
+#include "specter/observe/property/observer.h"
 #include "specter/observe/tree/action.h"
 #include "specter/observe/tree/observer.h"
 #include "specter/search/utils.h"
@@ -56,6 +58,38 @@ public:
       action.old_object.toString().toStdString());
     renamed->mutable_new_object()->set_query(
       action.new_object.toString().toStdString());
+    return response;
+  }
+};
+
+/* ------------------------- PropertyObservedActionsMapper ---------------------- */
+
+class PropertyObservedActionsMapper {
+public:
+  specter_proto::PropertyChange
+  operator()(const PropertyObservedAction::PropertyAdded &action) const {
+    specter_proto::PropertyChange response;
+    auto added = response.mutable_added();
+    added->set_property(action.property.toStdString());
+    *added->mutable_value() = convertIntoValue(action.value);
+    return response;
+  }
+
+  specter_proto::PropertyChange
+  operator()(const PropertyObservedAction::PropertyRemoved &action) const {
+    specter_proto::PropertyChange response;
+    auto removed = response.mutable_removed();
+    removed->set_property(action.property.toStdString());
+    return response;
+  }
+
+  specter_proto::PropertyChange
+  operator()(const PropertyObservedAction::PropertyUpdated &action) const {
+    specter_proto::PropertyChange response;
+    auto updated = response.mutable_updated();
+    updated->set_property(action.property.toStdString());
+    *updated->mutable_old_value() = convertIntoValue(action.old_value);
+    *updated->mutable_new_value() = convertIntoValue(action.new_value);
     return response;
   }
 };
@@ -533,6 +567,50 @@ ObjectListenTreeChangesCall::clone() const {
     getService(), getQueue());
 }
 
+/* ----------------------- ObjectListenPropertyChangesCall ---------------- */
+
+ObjectListenPropertyChangesCall::ObjectListenPropertyChangesCall(
+  specter_proto::ObjectService::AsyncService *service,
+  grpc::ServerCompletionQueue *queue)
+    : StreamCallData(
+        service, queue, CallTag{this},
+        &specter_proto::ObjectService::AsyncService::
+          RequestListenPropertiesChanges),
+      m_observer(std::make_unique<PropertyObserver>()),
+      m_observer_queue(std::make_unique<PropertyObserverQueue>()),
+      m_mapper(std::make_unique<PropertyObservedActionsMapper>()) {
+
+  m_observer_queue->setObserver(m_observer.get());
+  m_observer->moveToThread(qApp->thread());
+  m_observer->start();
+}
+
+ObjectListenPropertyChangesCall::~ObjectListenPropertyChangesCall() = default;
+
+ObjectListenPropertyChangesCall::ProcessResult
+ObjectListenPropertyChangesCall::process(const Request &request) const {
+  const auto query =
+    ObjectQuery::fromString(QString::fromStdString(request.query()));
+
+  auto [status, object] = tryGetSingleObject(query);
+  if (!status.ok()) return status;
+
+  if (m_observer->getObject() != object) { m_observer->setObject(object); }
+
+  if (m_observer_queue->isEmpty()) return {};
+
+  const auto observer_action = m_observer_queue->popAction();
+  const auto response = observer_action.visit(*m_mapper);
+
+  return response;
+}
+
+std::unique_ptr<ObjectListenPropertyChangesCallData>
+ObjectListenPropertyChangesCall::clone() const {
+  return std::make_unique<ObjectListenPropertyChangesCall>(
+    getService(), getQueue());
+}
+
 /* ------------------------------ ObjectService --------------------------- */
 
 ObjectService::ObjectService() = default;
@@ -548,8 +626,8 @@ void ObjectService::start(grpc::ServerCompletionQueue *queue) {
   auto update_property_call = new ObjectUpdatePropertyCall(this, queue);
   auto get_methods_call = new ObjectGetMethodsCall(this, queue);
   auto get_properties_call = new ObjectGetPropertiesCall(this, queue);
-
   auto listen_tree_changes = new ObjectListenTreeChangesCall(this, queue);
+  auto listen_property_changes = new ObjectListenTreeChangesCall(this, queue);
 
   get_tree_call->proceed();
   find_call->proceed();
@@ -560,6 +638,7 @@ void ObjectService::start(grpc::ServerCompletionQueue *queue) {
   get_methods_call->proceed();
   get_properties_call->proceed();
   listen_tree_changes->proceed();
+  listen_property_changes->proceed();
 }
 
 }// namespace specter

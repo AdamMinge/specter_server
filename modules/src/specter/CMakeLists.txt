@@ -28,6 +28,8 @@ set(sources
     ${source_root}/search/strategy.cpp
     ${source_root}/observe/tree/action.cpp
     ${source_root}/observe/tree/observer.cpp
+    ${source_root}/observe/property/action.cpp
+    ${source_root}/observe/property/observer.cpp
     ${source_root}/mark/marker.cpp
     ${source_root}/mark/widget_marker.cpp
     ${source_root}/mark/widget_tooltip.cpp)
@@ -52,6 +54,8 @@ set(includes
     ${include_root}/search/strategy.h
     ${include_root}/observe/tree/action.h
     ${include_root}/observe/tree/observer.h
+    ${include_root}/observe/property/action.h
+    ${include_root}/observe/property/observer.h
     ${include_root}/mark/marker.h
     ${include_root}/mark/widget_marker.h
     ${include_root}/mark/widget_tooltip.h)

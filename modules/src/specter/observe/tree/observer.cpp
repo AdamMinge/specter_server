@@ -25,7 +25,6 @@ TreeObserver::~TreeObserver() { stop(); }
 void TreeObserver::start() {
   if (m_observing) return;
 
-
   QMetaObject::invokeMethod(
     qApp,
     [this]() {
@@ -38,7 +37,6 @@ void TreeObserver::start() {
 
 void TreeObserver::stop() {
   if (!m_observing) return;
-
 
   QMetaObject::invokeMethod(
     qApp,

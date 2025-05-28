@@ -627,7 +627,8 @@ void ObjectService::start(grpc::ServerCompletionQueue *queue) {
   auto get_methods_call = new ObjectGetMethodsCall(this, queue);
   auto get_properties_call = new ObjectGetPropertiesCall(this, queue);
   auto listen_tree_changes = new ObjectListenTreeChangesCall(this, queue);
-  auto listen_property_changes = new ObjectListenTreeChangesCall(this, queue);
+  auto listen_property_changes =
+    new ObjectListenPropertyChangesCall(this, queue);
 
   get_tree_call->proceed();
   find_call->proceed();

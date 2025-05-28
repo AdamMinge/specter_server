@@ -41,7 +41,8 @@ private:
   void stopChangesTracker();
   void checkForChanges();
 
-  void initTrackedProperties();
+  [[nodiscard]] std::map<QString, QVariant> getTrackedProperties() const;
+  [[nodiscard]] bool variantEqual(const QVariant &a, const QVariant &b) const;
 
 private:
   QObject *m_object;

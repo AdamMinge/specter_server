@@ -5,6 +5,9 @@
 #include "specter/search/utils.h"
 /* ------------------------------------ Qt ---------------------------------- */
 #include <QApplication>
+#include <QBrush>
+#include <QFont>
+#include <QIcon>
 #include <QMetaProperty>
 /* --------------------------------- Standard ------------------------------- */
 #include <queue>
@@ -24,11 +27,11 @@ PropertyObserver::PropertyObserver()
 PropertyObserver::~PropertyObserver() { stop(); }
 
 void PropertyObserver::setObject(QObject *object) {
-  auto was_observing = isObserving();
-
-  if (was_observing) stop();
-  m_object = object;
-  if (was_observing) start();
+  if (m_object != object) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_object = object;
+    m_tracked_properties = getTrackedProperties();
+  }
 }
 
 QObject *PropertyObserver::getObject() const { return m_object; }
@@ -63,8 +66,7 @@ void PropertyObserver::startChangesTracker() {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   m_check_timer->start();
-
-  if (m_object) initTrackedProperties();
+  m_tracked_properties = getTrackedProperties();
 }
 
 void PropertyObserver::stopChangesTracker() {
@@ -78,15 +80,7 @@ void PropertyObserver::checkForChanges() {
   std::lock_guard<std::mutex> lock(m_mutex);
   if (!m_object) return;
 
-  auto current_properties = std::map<QString, QVariant>{};
-  auto current_meta = m_object->metaObject();
-
-  for (int i = 0; i < current_meta->propertyCount(); ++i) {
-    const auto prop_name = QString(current_meta->property(i).name());
-    current_properties[prop_name] =
-      m_object->property(prop_name.toStdString().c_str());
-  }
-
+  auto current_properties = getTrackedProperties();
   for (const auto &old_prop : m_tracked_properties) {
     if (!current_properties.contains(old_prop.first)) {
       Q_EMIT actionReported(
@@ -100,7 +94,7 @@ void PropertyObserver::checkForChanges() {
         PropertyObservedAction::PropertyAdded{cur_prop.first, cur_prop.second});
     } else {
       const auto &old_value = m_tracked_properties[cur_prop.first];
-      if (old_value != cur_prop.second) {
+      if (!variantEqual(old_value, cur_prop.second)) {
         Q_EMIT actionReported(PropertyObservedAction::PropertyUpdated{
           cur_prop.first, old_value, cur_prop.second});
       }
@@ -110,7 +104,9 @@ void PropertyObserver::checkForChanges() {
   m_tracked_properties = current_properties;
 }
 
-void PropertyObserver::initTrackedProperties() {
+std::map<QString, QVariant> PropertyObserver::getTrackedProperties() const {
+  if (!m_object) return {};
+
   auto unique_properties = std::set<QString>{};
   auto meta_object = m_object->metaObject();
   for (auto i = 0; i < meta_object->propertyCount(); ++i) {
@@ -118,10 +114,49 @@ void PropertyObserver::initTrackedProperties() {
     unique_properties.insert(name);
   }
 
+  auto tracked_properties = std::map<QString, QVariant>{};
   for (auto unique_property : unique_properties) {
     const auto value =
       m_object->property(unique_property.toStdString().c_str());
-    m_tracked_properties[unique_property] = value;
+    tracked_properties[unique_property] = value;
+  }
+
+  return tracked_properties;
+}
+
+bool PropertyObserver::variantEqual(
+  const QVariant &a, const QVariant &b) const {
+  if (a.userType() != b.userType()) return false;
+
+  switch (a.userType()) {
+    case QMetaType::QIcon: {
+      QIcon iconA = a.value<QIcon>();
+      QIcon iconB = b.value<QIcon>();
+      return iconA.cacheKey() == iconB.cacheKey();
+    }
+    case QMetaType::QPixmap: {
+      QPixmap pxA = a.value<QPixmap>();
+      QPixmap pxB = b.value<QPixmap>();
+      return pxA.cacheKey() == pxB.cacheKey();
+    }
+    case QMetaType::QImage: {
+      QImage imgA = a.value<QImage>();
+      QImage imgB = b.value<QImage>();
+      return imgA == imgB;
+    }
+    case QMetaType::QBrush: {
+      QBrush brushA = a.value<QBrush>();
+      QBrush brushB = b.value<QBrush>();
+      return brushA == brushB;
+    }
+    case QMetaType::QFont: {
+      QFont f1 = a.value<QFont>();
+      QFont f2 = b.value<QFont>();
+      return f1 == f2;
+    }
+
+    default:
+      return a == b;
   }
 }
 

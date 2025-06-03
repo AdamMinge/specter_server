@@ -19,6 +19,7 @@ public:
   struct PropertyAdded {
     QString property;
     QVariant value;
+    bool read_only;
   };
 
   struct PropertyRemoved {

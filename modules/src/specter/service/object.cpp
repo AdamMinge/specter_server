@@ -73,6 +73,7 @@ public:
     auto added = response.mutable_added();
     added->set_property(action.property.toStdString());
     *added->mutable_value() = convertIntoValue(action.value);
+    added->set_read_only(action.read_only);
     return response;
   }
 
@@ -544,15 +545,22 @@ ObjectGetPropertiesCall::properties(const QObject *object) const {
   auto meta_object = object->metaObject();
   for (auto i = 0; i < meta_object->propertyCount(); ++i) {
     const auto name = meta_object->property(i).name();
+    const auto read_only = !meta_object->property(i).isWritable();
     unique_properties.insert(name);
   }
 
   for (auto unique_property : unique_properties) {
     const auto value = invoke::getProperty(object, unique_property.c_str());
 
+    auto property_index =
+      object->metaObject()->indexOfProperty(unique_property.c_str());
+    auto read_only =
+      !object->metaObject()->property(property_index).isWritable();
+
     auto new_properties = response.add_properties();
     new_properties->set_property(unique_property);
     *new_properties->mutable_value() = convertIntoValue(value);
+    new_properties->set_read_only(read_only);
   }
 
   return response;

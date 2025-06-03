@@ -87,8 +87,13 @@ void PropertyObserver::checkForChanges() {
 
   for (const auto &cur_prop : current_properties) {
     if (!m_tracked_properties.contains(cur_prop.first)) {
-      Q_EMIT actionReported(
-        PropertyObservedAction::PropertyAdded{cur_prop.first, cur_prop.second});
+      auto property_index = m_object->metaObject()->indexOfProperty(
+        cur_prop.first.toUtf8().constData());
+      auto read_only =
+        !m_object->metaObject()->property(property_index).isWritable();
+
+      Q_EMIT actionReported(PropertyObservedAction::PropertyAdded{
+        cur_prop.first, cur_prop.second, read_only});
     } else {
       const auto &old_value = m_tracked_properties[cur_prop.first];
       if (!variantEqual(old_value, cur_prop.second)) {

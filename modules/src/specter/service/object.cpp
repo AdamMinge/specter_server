@@ -8,6 +8,7 @@
 #include "specter/observe/tree/observer.h"
 #include "specter/search/utils.h"
 #include "specter/service/utils.h"
+#include "specter/thread/utils.h"
 /* ------------------------------------ Qt ---------------------------------- */
 #include <QApplication>
 #include <QWidget>
@@ -428,7 +429,32 @@ ObjectUpdatePropertyCall::ProcessResult ObjectUpdatePropertyCall::setProperty(
       {}};
   }
 
-  object->setProperty(property_name, new_value);
+  auto index = object->metaObject()->indexOfProperty(property_name);
+  if (index >= 0) {
+    QMetaProperty property = object->metaObject()->property(index);
+    if (!property.isWritable()) {
+      QString error_msg =
+        QLatin1String("Property '%1' could not be set to '%2'. "
+                      "The property may not exist or is not writable.")
+          .arg(property_name, new_value.toString());
+      return {
+        grpc::Status(
+          grpc::StatusCode::INVALID_ARGUMENT, error_msg.toStdString()),
+        {}};
+    }
+  }
+
+  auto ret = invoke::setProperty(object, property_name, new_value);
+  if (!ret) {
+    return {
+      grpc::Status(
+        grpc::StatusCode::INVALID_ARGUMENT,
+        QLatin1String("Property '%1' set failed.")
+          .arg(property_name)
+          .toStdString()),
+      {}};
+  }
+
   return {grpc::Status::OK, {}};
 }
 
@@ -522,7 +548,7 @@ ObjectGetPropertiesCall::properties(const QObject *object) const {
   }
 
   for (auto unique_property : unique_properties) {
-    const auto value = object->property(unique_property.c_str());
+    const auto value = invoke::getProperty(object, unique_property.c_str());
 
     auto new_properties = response.add_properties();
     new_properties->set_property(unique_property);

@@ -3,6 +3,7 @@
 
 #include "specter/module.h"
 #include "specter/search/utils.h"
+#include "specter/thread/invoke.h"
 /* ------------------------------------ Qt ---------------------------------- */
 #include <QApplication>
 #include <QBrush>
@@ -27,51 +28,47 @@ PropertyObserver::PropertyObserver()
 PropertyObserver::~PropertyObserver() { stop(); }
 
 void PropertyObserver::setObject(QObject *object) {
-  if (m_object != object) {
+  InvokeInObjectThread(qApp, [this, object]() {
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_object = object;
-    m_tracked_properties = getTrackedProperties();
-  }
+    if (m_object != object) {
+      m_object = object;
+      m_tracked_properties = getTrackedProperties();
+    }
+  });
 }
 
-QObject *PropertyObserver::getObject() const { return m_object; }
+QObject *PropertyObserver::getObject() const {
+  std::lock_guard<std::mutex> lock(m_mutex);
+  return m_object;
+}
 
 void PropertyObserver::start() {
-  if (m_observing) return;
-
-  QMetaObject::invokeMethod(
-    qApp,
-    [this]() {
-      m_observing = true;
-      startChangesTracker();
-    },
-    Qt::QueuedConnection);
+  InvokeInObjectThread(qApp, [this]() { startChangesTracker(); });
 }
 
 void PropertyObserver::stop() {
-  if (!m_observing) return;
-
-  QMetaObject::invokeMethod(
-    qApp,
-    [this]() {
-      m_observing = false;
-      stopChangesTracker();
-    },
-    Qt::QueuedConnection);
+  InvokeInObjectThread(qApp, [this]() { stopChangesTracker(); });
 }
 
-bool PropertyObserver::isObserving() const { return m_observing; }
+bool PropertyObserver::isObserving() const {
+  std::lock_guard<std::mutex> lock(m_mutex);
+  return m_observing;
+}
 
 void PropertyObserver::startChangesTracker() {
   std::lock_guard<std::mutex> lock(m_mutex);
+  if (m_observing) return;
 
+  m_observing = true;
   m_check_timer->start();
   m_tracked_properties = getTrackedProperties();
 }
 
 void PropertyObserver::stopChangesTracker() {
   std::lock_guard<std::mutex> lock(m_mutex);
+  if (!m_observing) return;
 
+  m_observing = false;
   m_check_timer->stop();
   m_tracked_properties.clear();
 }

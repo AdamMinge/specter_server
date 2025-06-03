@@ -3,6 +3,7 @@
 
 #include "specter/module.h"
 #include "specter/record/strategy.h"
+#include "specter/thread/invoke.h"
 /* ------------------------------------ Qt ---------------------------------- */
 #include <QAbstractButton>
 #include <QApplication>
@@ -118,30 +119,22 @@ ActionRecorder::ActionRecorder(QObject *parent)
 ActionRecorder::~ActionRecorder() { stop(); }
 
 void ActionRecorder::start() {
-  if (m_recording) return;
+  InvokeInObjectThread(qApp, [this]() {
+    if (m_recording) return;
+    m_recording = true;
 
-  QMetaObject::invokeMethod(
-    qApp,
-    [this]() {
-      m_recording = true;
-
-      qApp->installEventFilter(m_widget_listener);
-    },
-    Qt::QueuedConnection);
+    qApp->installEventFilter(m_widget_listener);
+  });
 }
 
 void ActionRecorder::stop() {
-  if (!m_recording) return;
+  InvokeInObjectThread(qApp, [this]() {
+    if (!m_recording) return;
+    m_recording = false;
 
-  QMetaObject::invokeMethod(
-    qApp,
-    [this]() {
-      m_recording = false;
-
-      qApp->removeEventFilter(m_widget_listener);
-      onCurrentWidgetChanged(nullptr);
-    },
-    Qt::QueuedConnection);
+    qApp->removeEventFilter(m_widget_listener);
+    onCurrentWidgetChanged(nullptr);
+  });
 }
 
 bool ActionRecorder::isRecording() const { return m_recording; }

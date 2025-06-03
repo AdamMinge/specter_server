@@ -3,6 +3,7 @@
 
 #include "specter/module.h"
 #include "specter/search/utils.h"
+#include "specter/thread/invoke.h"
 /* ------------------------------------ Qt ---------------------------------- */
 #include <QApplication>
 /* --------------------------------- Standard ------------------------------- */
@@ -23,29 +24,23 @@ TreeObserver::TreeObserver()
 TreeObserver::~TreeObserver() { stop(); }
 
 void TreeObserver::start() {
-  if (m_observing) return;
+  InvokeInObjectThread(qApp, [this]() {
+    if (m_observing) return;
+    m_observing = true;
 
-  QMetaObject::invokeMethod(
-    qApp,
-    [this]() {
-      m_observing = true;
-      startRenameTracker();
-      qApp->installEventFilter(this);
-    },
-    Qt::QueuedConnection);
+    startRenameTracker();
+    qApp->installEventFilter(this);
+  });
 }
 
 void TreeObserver::stop() {
-  if (!m_observing) return;
+  InvokeInObjectThread(qApp, [this]() {
+    if (!m_observing) return;
+    m_observing = false;
 
-  QMetaObject::invokeMethod(
-    qApp,
-    [this]() {
-      m_observing = false;
-      stopRenameTracker();
-      qApp->removeEventFilter(this);
-    },
-    Qt::QueuedConnection);
+    stopRenameTracker();
+    qApp->removeEventFilter(this);
+  });
 }
 
 bool TreeObserver::isObserving() const { return m_observing; }

@@ -2,6 +2,8 @@
 #include "specter/search/strategy.h"
 
 #include "specter/search/utils.h"
+#include "specter/thread/invoke.h"
+#include "specter/thread/utils.h"
 /* --------------------------------- Standard ------------------------------- */
 #include <set>
 /* ------------------------------------ Qt ---------------------------------- */
@@ -21,6 +23,8 @@
 #include <QTableWidget>
 #include <QVariantMap>
 #include <QWidget>
+
+#include <QMetaObject>
 /* -------------------------------------------------------------------------- */
 
 namespace specter {
@@ -40,7 +44,7 @@ TypeSearch::~TypeSearch() = default;
 bool TypeSearch::matchesObjectQuery(
   const QObject *object, const QVariantMap &query) const {
   if (query.contains(type_query)) {
-    return object->metaObject()->className() == query[type_query];
+    return query[type_query] == invoke::getClassName(object);
   }
 
   return true;
@@ -48,7 +52,7 @@ bool TypeSearch::matchesObjectQuery(
 
 QVariantMap TypeSearch::createObjectQuery(const QObject *object) const {
   auto query = QVariantMap{};
-  query[type_query] = object->metaObject()->className();
+  query[type_query] = invoke::getClassName(object);
 
   return query;
 }
@@ -66,7 +70,9 @@ bool PropertiesSearch::matchesObjectQuery(
 
     const auto used_properties = getUsedProperties(object);
     for (const auto &property : used_properties) {
-      if (object->property(property.toUtf8().data()) != properties[property])
+      if (
+        invoke::getProperty(object, property.toUtf8().data()) !=
+        properties[property])
         return false;
     }
   }
@@ -80,7 +86,8 @@ QVariantMap PropertiesSearch::createObjectQuery(const QObject *object) const {
 
   const auto used_properties = getUsedProperties(object);
   for (const auto &property : used_properties) {
-    if (auto value = object->property(property.toUtf8().data());
+
+    if (auto value = invoke::getProperty(object, property.toUtf8().data());
         value.isValid()) {
       properties[property] = value;
     }
@@ -163,16 +170,17 @@ QVariantMap PathSearch::createObjectQuery(const QObject *object) const {
 }
 
 QString PathSearch::getPath(const QObject *object) const {
+  auto current_object = object;
   auto objects_path = QStringList{};
 
-  while (object) {
-    auto object_name = object->objectName();
+  while (current_object) {
+    auto object_name = current_object->objectName();
     if (object_name.isEmpty()) {
-      object_name = object->metaObject()->className();
+      object_name = current_object->metaObject()->className();
     }
 
     objects_path.prepend(object_name);
-    object = object->parent();
+    current_object = current_object->parent();
   }
 
   return objects_path.join(".");

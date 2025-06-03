@@ -7,16 +7,16 @@
 /* -------------------------------------------------------------------------- */
 
 class ServerThread : public QThread {
- public:
-  ServerThread(specter::SpecterModule& specter, const QHostAddress& host,
-               quint16 port)
+public:
+  ServerThread(
+    specter::SpecterModule &specter, const QHostAddress &host, quint16 port)
       : m_specter(specter), m_host(host), m_port(port) {}
 
- protected:
+protected:
   void run() override { m_specter.getServer().listen(m_host, m_port); }
 
- private:
-  specter::SpecterModule& m_specter;
+private:
+  specter::SpecterModule &m_specter;
   QHostAddress m_host;
   quint16 m_port;
 };
@@ -37,7 +37,7 @@ void startServer() {
   if (!valid_port) return;
 
   auto server_thread =
-      new ServerThread(specter::SpecterModule::getInstance(), host, port);
+    new ServerThread(specter::SpecterModule::getInstance(), host, port);
   server_thread->start();
 }
 
@@ -46,9 +46,7 @@ void startServer() {
 #include <windows.h>
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
-  if (fdwReason == DLL_PROCESS_ATTACH) {
-    startServer();
-  }
+  if (fdwReason == DLL_PROCESS_ATTACH) { startServer(); }
   return TRUE;
 }
 #elif defined(SPECTER_OS_LINUX)

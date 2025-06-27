@@ -580,13 +580,13 @@ ObjectListenTreeChangesCall::ObjectListenTreeChangesCall(
 
   m_observer_queue->setObserver(m_observer.get());
   m_observer->moveToThread(qApp->thread());
-  m_observer->start();
 }
 
 ObjectListenTreeChangesCall::~ObjectListenTreeChangesCall() = default;
 
 ObjectListenTreeChangesCall::ProcessResult
 ObjectListenTreeChangesCall::process(const Request &request) const {
+  if (!m_observer->isObserving()) { m_observer->start(); }
   if (m_observer_queue->isEmpty()) return {};
 
   const auto observer_action = m_observer_queue->popAction();
@@ -616,7 +616,6 @@ ObjectListenPropertyChangesCall::ObjectListenPropertyChangesCall(
 
   m_observer_queue->setObserver(m_observer.get());
   m_observer->moveToThread(qApp->thread());
-  m_observer->start();
 }
 
 ObjectListenPropertyChangesCall::~ObjectListenPropertyChangesCall() = default;
@@ -629,6 +628,7 @@ ObjectListenPropertyChangesCall::process(const Request &request) const {
   auto [status, object] = tryGetSingleObject(query);
   if (!status.ok()) return status;
 
+  if (!m_observer->isObserving()) { m_observer->start(); }
   if (m_observer->getObject() != object) { m_observer->setObject(object); }
 
   if (m_observer_queue->isEmpty()) return {};

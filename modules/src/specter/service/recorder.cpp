@@ -176,7 +176,6 @@ RecorderListenCommandsCall::RecorderListenCommandsCall(
 
   m_recorder_queue->setRecorder(m_recorder.get());
   m_recorder->moveToThread(qApp->thread());
-  m_recorder->start();
 }
 
 RecorderListenCommandsCall::~RecorderListenCommandsCall() = default;
@@ -188,6 +187,7 @@ RecorderListenCommandsCall::clone() const {
 
 RecorderListenCommandsCall::ProcessResult
 RecorderListenCommandsCall::process(const Request &request) const {
+  if (!m_recorder->isRecording()) { m_recorder->start(); }
   if (m_recorder_queue->isEmpty()) return {};
 
   const auto recorded_action = m_recorder_queue->popAction();

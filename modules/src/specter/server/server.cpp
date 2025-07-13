@@ -6,12 +6,16 @@
 /* ----------------------------------- GRPC --------------------------------- */
 #include <grpc++/grpc++.h>
 #include <grpc++/impl/service_type.h>
+/* ------------------------------------ Qt ---------------------------------- */
+#include <QApplication>
 /* -------------------------------------------------------------------------- */
 
 namespace specter {
 
 /* ----------------------------------- Server ------------------------------- */
 
+const int Server::poll_batch_size = 10;
+const int Server::poll_interval_ms = 10;
 
 Server::Server() = default;
 
@@ -23,6 +27,7 @@ Server::~Server() {
 void Server::listen(const QHostAddress &host, quint16 port) {
   const auto address =
     QLatin1String("%1:%2").arg(host.toString()).arg(port).toStdString();
+
 
   grpc::ServerBuilder builder;
   builder.AddListeningPort(address, grpc::InsecureServerCredentials());
@@ -40,19 +45,27 @@ void Server::listen(const QHostAddress &host, quint16 port) {
 }
 
 void Server::startLoop() {
-  auto tag = (void *) nullptr;
-  auto ok = false;
+  for (const auto &service : m_services) { service->start(m_queue.get()); }
 
-  for (const auto &service : m_services) service->start(m_queue.get());
-  while (true) {
-    if (!m_queue->Next(&tag, &ok)) break;
+  QTimer *timer = new QTimer(this);
+  QObject::connect(timer, &QTimer::timeout, [this]() {
+    void *tag = nullptr;
+    bool ok = false;
 
-    if (ok) {
-      auto call_tag = static_cast<CallTag *>(tag);
-      auto callable = static_cast<Callable *>(call_tag->callable);
-      if (callable) { callable->proceed(); }
+    for (int i = 0; i < poll_batch_size; ++i) {
+      auto status =
+        m_queue->AsyncNext(&tag, &ok, std::chrono::system_clock::now());
+      if (status == grpc::CompletionQueue::GOT_EVENT && ok) {
+        auto call_tag = static_cast<CallTag *>(tag);
+        auto callable = static_cast<Callable *>(call_tag->callable);
+        if (callable) callable->proceed();
+      } else if (status != grpc::CompletionQueue::GOT_EVENT) {
+        return;
+      }
     }
-  }
+  });
+
+  timer->start(poll_interval_ms);
 }
 
 }// namespace specter

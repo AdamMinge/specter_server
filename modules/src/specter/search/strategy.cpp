@@ -2,8 +2,6 @@
 #include "specter/search/strategy.h"
 
 #include "specter/search/utils.h"
-#include "specter/thread/invoke.h"
-#include "specter/thread/utils.h"
 /* --------------------------------- Standard ------------------------------- */
 #include <set>
 /* ------------------------------------ Qt ---------------------------------- */
@@ -44,7 +42,7 @@ TypeSearch::~TypeSearch() = default;
 bool TypeSearch::matchesObjectQuery(
   const QObject *object, const QVariantMap &query) const {
   if (query.contains(type_query)) {
-    return query[type_query] == invoke::getClassName(object);
+    return query[type_query] == object->metaObject()->className();
   }
 
   return true;
@@ -52,7 +50,7 @@ bool TypeSearch::matchesObjectQuery(
 
 QVariantMap TypeSearch::createObjectQuery(const QObject *object) const {
   auto query = QVariantMap{};
-  query[type_query] = invoke::getClassName(object);
+  query[type_query] = object->metaObject()->className();
 
   return query;
 }
@@ -70,9 +68,7 @@ bool PropertiesSearch::matchesObjectQuery(
 
     const auto used_properties = getUsedProperties(object);
     for (const auto &property : used_properties) {
-      if (
-        invoke::getProperty(object, property.toUtf8().data()) !=
-        properties[property])
+      if (object->property(property.toUtf8().data()) != properties[property])
         return false;
     }
   }
@@ -87,7 +83,7 @@ QVariantMap PropertiesSearch::createObjectQuery(const QObject *object) const {
   const auto used_properties = getUsedProperties(object);
   for (const auto &property : used_properties) {
 
-    if (auto value = invoke::getProperty(object, property.toUtf8().data());
+    if (auto value = object->property(property.toUtf8().data());
         value.isValid()) {
       properties[property] = value;
     }

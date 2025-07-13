@@ -2,24 +2,10 @@
 #include "specter/config.h"
 #include "specter/module.h"
 /* ------------------------------------ Qt ---------------------------------- */
+#include <QApplication>
 #include <QThread>
 #include <QtGlobal>
 /* -------------------------------------------------------------------------- */
-
-class ServerThread : public QThread {
-public:
-  ServerThread(
-    specter::SpecterModule &specter, const QHostAddress &host, quint16 port)
-      : m_specter(specter), m_host(host), m_port(port) {}
-
-protected:
-  void run() override { m_specter.getServer().listen(m_host, m_port); }
-
-private:
-  specter::SpecterModule &m_specter;
-  QHostAddress m_host;
-  quint16 m_port;
-};
 
 void startServer() {
   auto valid_port = false;
@@ -36,9 +22,13 @@ void startServer() {
   if (!valid_host) return;
   if (!valid_port) return;
 
-  auto server_thread =
-    new ServerThread(specter::SpecterModule::getInstance(), host, port);
-  server_thread->start();
+  QMetaObject::invokeMethod(
+    qApp,
+    [host, port]() {
+      auto &specter = specter::SpecterModule::getInstance();
+      specter.getServer().listen(host, port);
+    },
+    Qt::QueuedConnection);
 }
 
 #if defined(SPECTER_OS_WINDOWS)

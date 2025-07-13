@@ -3,7 +3,6 @@
 
 #include "specter/mark/widget_marker.h"
 #include "specter/mark/widget_tooltip.h"
-#include "specter/thread/invoke.h"
 /* ------------------------------------ Qt ---------------------------------- */
 #include <QApplication>
 #include <QMouseEvent>
@@ -51,27 +50,23 @@ Marker::Marker(QObject *parent)
 Marker::~Marker() = default;
 
 void Marker::start() {
-  InvokeInObjectThread(qApp, [this]() {
-    if (m_marking) return;
-    m_marking = true;
+  if (m_marking) return;
+  m_marking = true;
 
-    qApp->installEventFilter(m_listener.get());
+  qApp->installEventFilter(m_listener.get());
 
-    m_tooltip->show();
-    m_marker->show();
-  });
+  m_tooltip->show();
+  m_marker->show();
 }
 
 void Marker::stop() {
-  InvokeInObjectThread(qApp, [this]() {
-    if (!m_marking) return;
-    m_marking = false;
+  if (!m_marking) return;
+  m_marking = false;
 
-    qApp->removeEventFilter(m_listener.get());
+  qApp->removeEventFilter(m_listener.get());
 
-    m_tooltip->hide();
-    m_marker->hide();
-  });
+  m_tooltip->hide();
+  m_marker->hide();
 }
 
 bool Marker::isMarking() { return m_marking; }

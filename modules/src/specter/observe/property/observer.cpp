@@ -3,7 +3,6 @@
 
 #include "specter/module.h"
 #include "specter/search/utils.h"
-#include "specter/thread/invoke.h"
 /* ------------------------------------ Qt ---------------------------------- */
 #include <QApplication>
 #include <QBrush>
@@ -28,13 +27,11 @@ PropertyObserver::PropertyObserver()
 PropertyObserver::~PropertyObserver() { stop(); }
 
 void PropertyObserver::setObject(QObject *object) {
-  InvokeInObjectThread(qApp, [this, object]() {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    if (m_object != object) {
-      m_object = object;
-      m_tracked_properties = getTrackedProperties();
-    }
-  });
+  std::lock_guard<std::mutex> lock(m_mutex);
+  if (m_object != object) {
+    m_object = object;
+    m_tracked_properties = getTrackedProperties();
+  }
 }
 
 QObject *PropertyObserver::getObject() const {
@@ -42,13 +39,9 @@ QObject *PropertyObserver::getObject() const {
   return m_object;
 }
 
-void PropertyObserver::start() {
-  InvokeInObjectThread(qApp, [this]() { startChangesTracker(); });
-}
+void PropertyObserver::start() { startChangesTracker(); }
 
-void PropertyObserver::stop() {
-  InvokeInObjectThread(qApp, [this]() { stopChangesTracker(); });
-}
+void PropertyObserver::stop() { stopChangesTracker(); }
 
 bool PropertyObserver::isObserving() const {
   std::lock_guard<std::mutex> lock(m_mutex);

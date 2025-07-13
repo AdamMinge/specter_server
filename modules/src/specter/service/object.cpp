@@ -8,7 +8,6 @@
 #include "specter/observe/tree/observer.h"
 #include "specter/search/utils.h"
 #include "specter/service/utils.h"
-#include "specter/thread/utils.h"
 /* ------------------------------------ Qt ---------------------------------- */
 #include <QApplication>
 #include <QWidget>
@@ -445,7 +444,7 @@ ObjectUpdatePropertyCall::ProcessResult ObjectUpdatePropertyCall::setProperty(
     }
   }
 
-  auto ret = invoke::setProperty(object, property_name, new_value);
+  auto ret = object->setProperty(property_name, new_value);
   if (!ret) {
     return {
       grpc::Status(
@@ -550,7 +549,7 @@ ObjectGetPropertiesCall::properties(const QObject *object) const {
   }
 
   for (auto unique_property : unique_properties) {
-    const auto value = invoke::getProperty(object, unique_property.c_str());
+    const auto value = object->property(unique_property.c_str());
 
     auto property_index =
       object->metaObject()->indexOfProperty(unique_property.c_str());

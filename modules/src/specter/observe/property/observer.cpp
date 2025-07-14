@@ -12,6 +12,7 @@
 #include <QMetaProperty>
 /* --------------------------------- Standard ------------------------------- */
 #include <queue>
+#include <set>
 /* -------------------------------------------------------------------------- */
 
 namespace specter {
@@ -92,13 +93,15 @@ void PropertyObserver::checkForChanges() {
       auto read_only =
         !m_object->metaObject()->property(property_index).isWritable();
 
-      Q_EMIT actionReported(PropertyObservedAction::PropertyAdded{
-        cur_prop.first, cur_prop.second, read_only});
+      Q_EMIT actionReported(
+        PropertyObservedAction::PropertyAdded{
+          cur_prop.first, cur_prop.second, read_only});
     } else {
       const auto &old_value = m_tracked_properties[cur_prop.first];
       if (!variantEqual(old_value, cur_prop.second)) {
-        Q_EMIT actionReported(PropertyObservedAction::PropertyUpdated{
-          cur_prop.first, old_value, cur_prop.second});
+        Q_EMIT actionReported(
+          PropertyObservedAction::PropertyUpdated{
+            cur_prop.first, old_value, cur_prop.second});
       }
     }
   }

@@ -16,6 +16,32 @@ else()
     set(configure_script ./configure)
 endif()
 
+if(CMAKE_CONFIGURATION_TYPES)
+    set(BUILD_COMMAND_CONFIG 
+        ${CMAKE_COMMAND} 
+        --build .
+        --config $<CONFIG>)
+    
+    set(INSTALL_COMMAND_CONFIG
+        ${CMAKE_COMMAND} 
+        --build .
+        --target install)
+else()
+    if(NOT CMAKE_BUILD_TYPE)
+        set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
+    endif()
+    
+    set(BUILD_COMMAND_CONFIG 
+        ${CMAKE_COMMAND} 
+        --build .
+        --config ${CMAKE_BUILD_TYPE})
+    
+    set(INSTALL_COMMAND_CONFIG
+        ${CMAKE_COMMAND} 
+        --build .
+        --target install)
+endif()
+
 include(ExternalProject)
 ExternalProject_Add(
     qt
@@ -36,12 +62,9 @@ ExternalProject_Add(
         -nomake examples -nomake tests 
         -qpa xcb -prefix ${install_dir}
     BUILD_COMMAND               
-        ${CMAKE_COMMAND} 
-        --build .
+        ${BUILD_COMMAND_CONFIG} 
     INSTALL_COMMAND             
-        ${CMAKE_COMMAND} 
-        --build . 
-        --target install
+        ${INSTALL_COMMAND_CONFIG} 
     TEST_COMMAND                
         "")
 # ----------------------------------------------------------------------- #

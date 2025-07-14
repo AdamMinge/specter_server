@@ -3,6 +3,8 @@
 
 /* ------------------------------------ Qt ---------------------------------- */
 #include <QHostAddress>
+#include <QObject>
+#include <QTimer>
 /* --------------------------------- Standard ------------------------------- */
 #include <memory>
 /* ----------------------------------- Local -------------------------------- */
@@ -30,7 +32,12 @@ concept IsValidService = std::is_base_of_v<specter::Service, TYPE> &&
 
 /* ----------------------------------- Server ------------------------------- */
 
-class LIB_SPECTER_API Server {
+class LIB_SPECTER_API Server : public QObject {
+  Q_OBJECT
+
+  static const int poll_batch_size;
+  static const int poll_interval_ms;
+
 public:
   explicit Server();
   ~Server();
@@ -41,8 +48,6 @@ public:
   void registerService(ARGS &&...args);
 
 private:
-  [[nodiscard]] int getNumberOfThreads() const;
-
   void startLoop();
 
   std::list<std::unique_ptr<Service>> m_services;

@@ -13,7 +13,6 @@ set(proto_root ${SPECTER_SOURCE_DIR}/proto/specter)
 set(sources
     ${source_root}/inject.cpp
     ${source_root}/module.cpp
-    ${source_root}/thread/utils.cpp
     ${source_root}/server/server.cpp
     ${source_root}/server/call.cpp
     ${source_root}/service/marker.cpp
@@ -39,8 +38,6 @@ set(includes
     ${include_root}/config.h
     ${include_root}/export.h
     ${include_root}/module.h
-    ${include_root}/thread/invoke.h
-    ${include_root}/thread/utils.h
     ${include_root}/server/service.h
     ${include_root}/server/server.h
     ${include_root}/server/call.h

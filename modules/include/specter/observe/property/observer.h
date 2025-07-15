@@ -4,6 +4,7 @@
 /* ------------------------------------ Qt ---------------------------------- */
 #include <QHash>
 #include <QObject>
+#include <QPointer>
 #include <QTimer>
 /* ---------------------------------- Standard ------------------------------ */
 #include <condition_variable>
@@ -45,10 +46,9 @@ private:
   [[nodiscard]] bool variantEqual(const QVariant &a, const QVariant &b) const;
 
 private:
-  QObject *m_object;
+  QPointer<QObject> m_object;
   bool m_observing;
   QTimer *m_check_timer;
-  mutable std::mutex m_mutex;
   std::map<QString, QVariant> m_tracked_properties;
 };
 

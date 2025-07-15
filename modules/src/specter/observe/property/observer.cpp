@@ -28,29 +28,21 @@ PropertyObserver::PropertyObserver()
 PropertyObserver::~PropertyObserver() { stop(); }
 
 void PropertyObserver::setObject(QObject *object) {
-  std::lock_guard<std::mutex> lock(m_mutex);
   if (m_object != object) {
     m_object = object;
     m_tracked_properties = getTrackedProperties();
   }
 }
 
-QObject *PropertyObserver::getObject() const {
-  std::lock_guard<std::mutex> lock(m_mutex);
-  return m_object;
-}
+QObject *PropertyObserver::getObject() const { return m_object; }
 
 void PropertyObserver::start() { startChangesTracker(); }
 
 void PropertyObserver::stop() { stopChangesTracker(); }
 
-bool PropertyObserver::isObserving() const {
-  std::lock_guard<std::mutex> lock(m_mutex);
-  return m_observing;
-}
+bool PropertyObserver::isObserving() const { return m_observing; }
 
 void PropertyObserver::startChangesTracker() {
-  std::lock_guard<std::mutex> lock(m_mutex);
   if (m_observing) return;
 
   m_observing = true;
@@ -59,7 +51,6 @@ void PropertyObserver::startChangesTracker() {
 }
 
 void PropertyObserver::stopChangesTracker() {
-  std::lock_guard<std::mutex> lock(m_mutex);
   if (!m_observing) return;
 
   m_observing = false;
@@ -68,7 +59,6 @@ void PropertyObserver::stopChangesTracker() {
 }
 
 void PropertyObserver::checkForChanges() {
-  std::lock_guard<std::mutex> lock(m_mutex);
   if (!m_object) return;
 
   auto current_properties = getTrackedProperties();

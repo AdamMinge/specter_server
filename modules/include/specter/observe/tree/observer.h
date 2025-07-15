@@ -2,11 +2,12 @@
 #define SPECTER_OBSERVE_OBSERVER_H
 
 /* ------------------------------------ Qt ---------------------------------- */
-#include <QHash>
 #include <QObject>
+#include <QPointer>
 #include <QTimer>
 /* ---------------------------------- Standard ------------------------------ */
 #include <condition_variable>
+#include <map>
 #include <mutex>
 /* ----------------------------------- Local -------------------------------- */
 #include "specter/export.h"
@@ -33,19 +34,27 @@ public:
 Q_SIGNALS:
   void actionReported(const TreeObservedAction &action);
 
-protected:
-  [[nodiscard]] bool eventFilter(QObject *object, QEvent *event) override;
+private:
+  void startIntervalCheck();
+  void stopIntervalCheck();
+  void intervalCheck();
+
+  void checkForCreatedObjects();
+  void checkForDestroyedObjects();
+  void checkForReparentedObjects();
+  void checkForRenamedObjects();
 
 private:
-  void startRenameTracker();
-  void stopRenameTracker();
-  void checkForRenames();
+  struct TrackedObjectCache {
+    ObjectQuery query = ObjectQuery{};
+    QPointer<QObject> object = nullptr;
+    QObject *parent = nullptr;
+  };
 
 private:
   bool m_observing;
   QTimer *m_check_timer;
-  mutable std::mutex m_mutex;
-  QMap<QObject *, ObjectQuery> m_tracked_objects;
+  std::map<QObject *, TrackedObjectCache> m_tracked_objects;
 };
 
 /* ----------------------------- TreeObserverQueue ------------------------ */

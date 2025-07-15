@@ -433,10 +433,10 @@ ObjectUpdatePropertyCall::ProcessResult ObjectUpdatePropertyCall::setProperty(
   if (index >= 0) {
     QMetaProperty property = object->metaObject()->property(index);
     if (!property.isWritable()) {
-      QString error_msg =
-        QLatin1String("Property '%1' could not be set to '%2'. "
-                      "The property may not exist or is not writable.")
-          .arg(property_name, new_value.toString());
+      QString error_msg = QLatin1String(
+                            "Property '%1' could not be set to '%2'. "
+                            "The property may not exist or is not writable.")
+                            .arg(property_name, new_value.toString());
       return {
         grpc::Status(
           grpc::StatusCode::INVALID_ARGUMENT, error_msg.toStdString()),
@@ -578,7 +578,6 @@ ObjectListenTreeChangesCall::ObjectListenTreeChangesCall(
       m_mapper(std::make_unique<TreeObservedActionsMapper>()) {
 
   m_observer_queue->setObserver(m_observer.get());
-  m_observer->moveToThread(qApp->thread());
 }
 
 ObjectListenTreeChangesCall::~ObjectListenTreeChangesCall() = default;
@@ -614,7 +613,6 @@ ObjectListenPropertyChangesCall::ObjectListenPropertyChangesCall(
       m_mapper(std::make_unique<PropertyObservedActionsMapper>()) {
 
   m_observer_queue->setObserver(m_observer.get());
-  m_observer->moveToThread(qApp->thread());
 }
 
 ObjectListenPropertyChangesCall::~ObjectListenPropertyChangesCall() = default;

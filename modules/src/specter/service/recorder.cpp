@@ -18,81 +18,90 @@ public:
   specter_proto::RecorderCommand
   operator()(const RecordedAction::ContextMenuOpened &action) const {
     auto response = specter_proto::RecorderCommand{};
-    response.set_command(QLatin1String{"ContextMenuOpened %1"}
-                           .arg(action.object.toString())
-                           .toStdString());
+    response.set_command(
+      QLatin1String{"ContextMenuOpened %1"}
+        .arg(action.object.toString())
+        .toStdString());
     return response;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::ButtonClicked &action) const {
     auto response = specter_proto::RecorderCommand{};
-    response.set_command(QLatin1String{"ButtonClicked %1"}
-                           .arg(action.object.toString())
-                           .toStdString());
+    response.set_command(
+      QLatin1String{"ButtonClicked %1"}
+        .arg(action.object.toString())
+        .toStdString());
     return response;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::ButtonToggled &action) const {
     auto response = specter_proto::RecorderCommand{};
-    response.set_command(QLatin1String{"ButtonToggled %1"}
-                           .arg(action.object.toString())
-                           .toStdString());
+    response.set_command(
+      QLatin1String{"ButtonToggled %1"}
+        .arg(action.object.toString())
+        .toStdString());
     return response;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::ComboBoxCurrentChanged &action) const {
     auto response = specter_proto::RecorderCommand{};
-    response.set_command(QLatin1String{"ComboBoxCurrentChanged %1"}
-                           .arg(action.object.toString())
-                           .toStdString());
+    response.set_command(
+      QLatin1String{"ComboBoxCurrentChanged %1"}
+        .arg(action.object.toString())
+        .toStdString());
     return response;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::SpinBoxValueChanged &action) const {
     auto response = specter_proto::RecorderCommand{};
-    response.set_command(QLatin1String{"SpinBoxValueChanged %1"}
-                           .arg(action.object.toString())
-                           .toStdString());
+    response.set_command(
+      QLatin1String{"SpinBoxValueChanged %1"}
+        .arg(action.object.toString())
+        .toStdString());
     return response;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::DoubleSpinBoxValueChanged &action) const {
     auto response = specter_proto::RecorderCommand{};
-    response.set_command(QLatin1String{"DoubleSpinBoxValueChanged %1"}
-                           .arg(action.object.toString())
-                           .toStdString());
+    response.set_command(
+      QLatin1String{"DoubleSpinBoxValueChanged %1"}
+        .arg(action.object.toString())
+        .toStdString());
     return response;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::SliderValueChanged &action) const {
     auto response = specter_proto::RecorderCommand{};
-    response.set_command(QLatin1String{"SliderValueChanged %1"}
-                           .arg(action.object.toString())
-                           .toStdString());
+    response.set_command(
+      QLatin1String{"SliderValueChanged %1"}
+        .arg(action.object.toString())
+        .toStdString());
     return response;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::TabCurrentChanged &action) const {
     auto response = specter_proto::RecorderCommand{};
-    response.set_command(QLatin1String{"TabCurrentChanged %1"}
-                           .arg(action.object.toString())
-                           .toStdString());
+    response.set_command(
+      QLatin1String{"TabCurrentChanged %1"}
+        .arg(action.object.toString())
+        .toStdString());
     return response;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::TabClosed &action) const {
     auto response = specter_proto::RecorderCommand{};
-    response.set_command(QLatin1String{"TabClosed %1"}
-                           .arg(action.object.toString())
-                           .toStdString());
+    response.set_command(
+      QLatin1String{"TabClosed %1"}
+        .arg(action.object.toString())
+        .toStdString());
     return response;
   }
 
@@ -107,45 +116,50 @@ public:
   specter_proto::RecorderCommand
   operator()(const RecordedAction::ToolBoxCurrentChanged &action) const {
     auto response = specter_proto::RecorderCommand{};
-    response.set_command(QLatin1String{"ToolBoxCurrentChanged %1"}
-                           .arg(action.object.toString())
-                           .toStdString());
+    response.set_command(
+      QLatin1String{"ToolBoxCurrentChanged %1"}
+        .arg(action.object.toString())
+        .toStdString());
     return response;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::ActionTriggered &action) const {
     auto response = specter_proto::RecorderCommand{};
-    response.set_command(QLatin1String{"ActionTriggered %1"}
-                           .arg(action.object.toString())
-                           .toStdString());
+    response.set_command(
+      QLatin1String{"ActionTriggered %1"}
+        .arg(action.object.toString())
+        .toStdString());
     return response;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::TextEditTextChanged &action) const {
     auto response = specter_proto::RecorderCommand{};
-    response.set_command(QLatin1String{"TextEditTextChanged %1"}
-                           .arg(action.object.toString())
-                           .toStdString());
+    response.set_command(
+      QLatin1String{"TextEditTextChanged %1"}
+        .arg(action.object.toString())
+        .toStdString());
     return response;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::LineEditTextChanged &action) const {
     auto response = specter_proto::RecorderCommand{};
-    response.set_command(QLatin1String{"LineEditTextChanged %1"}
-                           .arg(action.object.toString())
-                           .toStdString());
+    response.set_command(
+      QLatin1String{"LineEditTextChanged %1"}
+        .arg(action.object.toString())
+        .toStdString());
     return response;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::LineEditReturnPressed &action) const {
     auto response = specter_proto::RecorderCommand{};
-    response.set_command(QLatin1String{"LineEditReturnPressed %1"}
-                           .arg(action.object.toString())
-                           .toStdString());
+    response.set_command(
+      QLatin1String{"LineEditReturnPressed %1"}
+        .arg(action.object.toString())
+        .toStdString());
     return response;
   }
 };
@@ -175,7 +189,6 @@ RecorderListenCommandsCall::RecorderListenCommandsCall(
   m_recorder->addStrategy(new ActionRecordButtonStrategy());
 
   m_recorder_queue->setRecorder(m_recorder.get());
-  m_recorder->moveToThread(qApp->thread());
 }
 
 RecorderListenCommandsCall::~RecorderListenCommandsCall() = default;

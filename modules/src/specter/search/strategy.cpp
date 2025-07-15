@@ -179,7 +179,7 @@ QString PathSearch::getPath(const QObject *object) const {
     current_object = current_object->parent();
   }
 
-  return objects_path.join(".");
+  return objects_path.join("/");
 }
 
 /* ----------------------------- OrderIndexSearch --------------------------- */

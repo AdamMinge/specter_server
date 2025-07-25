@@ -49,6 +49,10 @@ bool ObjectQuery::operator==(const ObjectQuery &other) const {
   return m_data == other.m_data;
 }
 
+bool ObjectQuery::operator!=(const ObjectQuery &other) const {
+  return m_data != other.m_data;
+}
+
 /* --------------------------------- CommonQueries -------------------------- */
 
 ObjectQuery CommonQueries::createPathObjectQuery(const QString &path) {
@@ -63,8 +67,9 @@ ObjectQuery CommonQueries::createTypeObjectQuery(const QMetaType &type) {
 
 ObjectQuery
 CommonQueries::createPropertiesObjectQuery(const QVariantMap &properties) {
-  return ObjectQuery(QVariantMap{
-    {PropertiesSearch::properties_query, QVariant::fromValue(properties)}});
+  return ObjectQuery(
+    QVariantMap{
+      {PropertiesSearch::properties_query, QVariant::fromValue(properties)}});
 }
 
 }// namespace specter

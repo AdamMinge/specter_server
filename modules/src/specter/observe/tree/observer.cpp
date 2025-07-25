@@ -6,7 +6,6 @@
 /* ------------------------------------ Qt ---------------------------------- */
 #include <QApplication>
 /* --------------------------------- Standard ------------------------------- */
-#include <queue>
 #include <set>
 /* -------------------------------------------------------------------------- */
 
@@ -38,24 +37,7 @@ void TreeObserver::stop() {
 
 bool TreeObserver::isObserving() const { return m_observing; }
 
-void TreeObserver::startIntervalCheck() {
-  auto objects = std::queue<QObject *>{};
-  for (auto top_widget : getTopLevelObjects()) { objects.push(top_widget); }
-
-  while (!objects.empty()) {
-    auto object = objects.front();
-    objects.pop();
-
-    auto query = searcher().getQuery(object);
-    m_tracked_objects.insert(
-      std::make_pair(
-        object, TrackedObjectCache{query, object, object->parent()}));
-
-    for (const auto child : object->children()) { objects.push(child); }
-  }
-
-  m_check_timer->start();
-}
+void TreeObserver::startIntervalCheck() { m_check_timer->start(); }
 
 void TreeObserver::stopIntervalCheck() {
   m_check_timer->stop();
@@ -63,8 +45,8 @@ void TreeObserver::stopIntervalCheck() {
 }
 
 void TreeObserver::intervalCheck() {
-  checkForCreatedObjects();
   checkForDestroyedObjects();
+  checkForCreatedObjects();
   checkForReparentedObjects();
   checkForRenamedObjects();
 }
@@ -95,100 +77,125 @@ void TreeObserver::checkForCreatedObjects() {
 }
 
 void TreeObserver::checkForDestroyedObjects() {
-  std::vector<QObject *> objects_to_remove;
-  std::queue<QObject *> queue;
+  auto toRemove = [this](auto object) {
+    auto parents = std::queue<QObject *>{};
+    parents.push(object);
 
-  queue.push(nullptr);
+    while (!parents.empty()) {
+      auto parent = parents.front();
+      parents.pop();
 
-  while (!queue.empty()) {
-    auto parent = queue.front();
-    queue.pop();
-
-    for (auto it = m_tracked_objects.begin(); it != m_tracked_objects.end();
-         ++it) {
-      const auto object = it->first;
-      const auto &cache = it->second;
-
-      if (cache.parent == parent) {
-        if (!cache.object) { objects_to_remove.push_back(object); }
-        queue.push(object);
-      }
+      const auto &cache = m_tracked_objects.at(parent);
+      if (!cache.object) return true;
+      if (cache.parent) parents.push(cache.parent);
     }
-  }
 
-  for (auto it = objects_to_remove.rbegin(); it != objects_to_remove.rend();
-       ++it) {
-    auto object = *it;
-    const auto &query = m_tracked_objects.at(object).query;
-    Q_EMIT actionReported(TreeObservedAction::ObjectRemoved{query});
-    m_tracked_objects.erase(object);
+    return false;
+  };
+
+  auto objects = getTrackedObjectsInDFSOrder();
+  for (auto object : objects) {
+    if (toRemove(object)) {
+      const auto &cache = m_tracked_objects.at(object);
+      const auto &query = cache.query;
+
+      Q_EMIT actionReported(TreeObservedAction::ObjectRemoved{query});
+      m_tracked_objects.erase(object);
+    }
   }
 }
 
 void TreeObserver::checkForReparentedObjects() {
-  std::vector<QObject *> objects_to_reparent;
-  std::queue<QObject *> queue;
-
-  queue.push(nullptr);
-
-  while (!queue.empty()) {
-    auto parent = queue.front();
-    queue.pop();
-
-    for (auto it = m_tracked_objects.begin(); it != m_tracked_objects.end();
-         ++it) {
-      const auto object = it->first;
-      const auto &cache = it->second;
-
-      if (cache.parent == parent) {
-        auto current_parent = object->parent();
-        if (cache.parent != current_parent) {
-          objects_to_reparent.push_back(object);
-        }
-        queue.push(object);
-      }
-    }
-  }
-
-  for (auto it = objects_to_reparent.rbegin(); it != objects_to_reparent.rend();
-       ++it) {
-    auto object = *it;
-    auto current_parent = object->parent();
+  auto objects = getTrackedObjectsInDFSOrder();
+  for (auto object : objects) {
     auto &cache = m_tracked_objects.at(object);
+    if (!cache.object) continue;
 
-    Q_EMIT actionReported(
-      TreeObservedAction::ObjectReparented{
+    const auto &query = cache.query;
+    const auto current_parent = object->parent();
+
+    auto opt_action = std::optional<TreeObservedAction::ObjectReparented>{};
+
+    if (cache.parent != current_parent) {
+      opt_action = TreeObservedAction::ObjectReparented{
         cache.query, current_parent ? m_tracked_objects.at(current_parent).query
-                                    : ObjectQuery{}});
-    cache.parent = current_parent;
+                                    : ObjectQuery{}};
+      cache.parent = current_parent;
+    }
+
+    if (opt_action) Q_EMIT actionReported(*opt_action);
   }
 }
 
 void TreeObserver::checkForRenamedObjects() {
-  std::queue<QObject *> queue;
-  queue.push(nullptr);
+  auto objects = getTrackedObjectsInDFSOrder();
+  for (auto object : objects) {
+    auto &cache = m_tracked_objects.at(object);
+    const auto &query = cache.query;
+    const auto current_query = searcher().getQuery(object);
 
-  while (!queue.empty()) {
-    auto parent = queue.front();
-    queue.pop();
-
-    for (auto it = m_tracked_objects.begin(); it != m_tracked_objects.end();
-         ++it) {
-      const auto object = it->first;
-      auto &cache = it->second;
-
-      if (cache.parent == parent) {
-        auto new_query = searcher().getQuery(object);
-        if (cache.query != new_query) {
-          auto old_query = cache.query;
-          cache.query = new_query;
-          Q_EMIT actionReported(
-            TreeObservedAction::ObjectRenamed{old_query, new_query});
-        }
-        queue.push(object);
-      }
+    if (cache.query != current_query) {
+      Q_EMIT actionReported(
+        TreeObservedAction::ObjectRenamed{cache.query, current_query});
+      cache.query = current_query;
     }
   }
+}
+
+QList<QObject *> TreeObserver::getTrackedObjectsInDFSOrder() const {
+  QList<QObject *> result = {};
+  QSet<QObject *> visited = {};
+
+  QSet<QObject *> allActiveTrackedObjects = {};
+  QMap<QObject *, QObject *> objectToParentMap = {};
+  QMap<QObject *, QList<QObject *>> childrenOf = {};
+
+  for (const auto &pair : m_tracked_objects) {
+    auto currentObjectKey = pair.first;
+    const auto &cache = pair.second;
+
+    allActiveTrackedObjects.insert(currentObjectKey);
+    objectToParentMap[currentObjectKey] = cache.parent;
+  }
+
+  for (auto currentObject : allActiveTrackedObjects) {
+    auto parent = objectToParentMap.value(currentObject, nullptr);
+
+    if (parent != nullptr && allActiveTrackedObjects.contains(parent)) {
+      childrenOf[parent].append(currentObject);
+    }
+  }
+
+  QList<QObject *> roots = {};
+  for (auto obj : allActiveTrackedObjects) {
+    auto parent = objectToParentMap.value(obj, nullptr);
+
+    if (parent == nullptr || !allActiveTrackedObjects.contains(parent)) {
+      roots.append(obj);
+    }
+  }
+
+
+  std::function<void(QObject *)> dfs_post_order = [&](auto currentObject) {
+    if (
+      !allActiveTrackedObjects.contains(currentObject) ||
+      visited.contains(currentObject)) {
+      return;
+    }
+    visited.insert(currentObject);
+
+    if (childrenOf.contains(currentObject)) {
+      for (auto child : childrenOf.value(currentObject)) {
+        dfs_post_order(child);
+      }
+    }
+
+    result.append(currentObject);
+  };
+
+  for (auto root : roots) { dfs_post_order(root); }
+
+  return result;
 }
 
 /* ------------------------------ TreeObserverQueue ------------------------- */

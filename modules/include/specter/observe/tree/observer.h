@@ -9,6 +9,7 @@
 #include <condition_variable>
 #include <map>
 #include <mutex>
+#include <queue>
 /* ----------------------------------- Local -------------------------------- */
 #include "specter/export.h"
 #include "specter/observe/tree/action.h"
@@ -43,6 +44,8 @@ private:
   void checkForDestroyedObjects();
   void checkForReparentedObjects();
   void checkForRenamedObjects();
+
+  [[nodiscard]] QList<QObject *> getTrackedObjectsInDFSOrder() const;
 
 private:
   struct TrackedObjectCache {

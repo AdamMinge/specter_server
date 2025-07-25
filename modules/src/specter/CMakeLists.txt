@@ -18,6 +18,7 @@ set(sources
     ${source_root}/service/marker.cpp
     ${source_root}/service/recorder.cpp
     ${source_root}/service/object.cpp
+    ${source_root}/service/previewer.cpp
     ${source_root}/service/utils.cpp
     ${source_root}/record/action.cpp
     ${source_root}/record/recorder.cpp
@@ -30,6 +31,7 @@ set(sources
     ${source_root}/observe/tree/observer.cpp
     ${source_root}/observe/property/action.cpp
     ${source_root}/observe/property/observer.cpp
+    ${source_root}/observe/preview/observer.cpp
     ${source_root}/mark/marker.cpp
     ${source_root}/mark/widget_marker.cpp
     ${source_root}/mark/widget_tooltip.cpp)
@@ -44,6 +46,7 @@ set(includes
     ${include_root}/service/marker.h
     ${include_root}/service/recorder.h
     ${include_root}/service/object.h
+    ${include_root}/service/previewer.h
     ${include_root}/service/utils.h
     ${include_root}/record/action.h
     ${include_root}/record/recorder.h
@@ -56,6 +59,7 @@ set(includes
     ${include_root}/observe/tree/observer.h
     ${include_root}/observe/property/action.h
     ${include_root}/observe/property/observer.h
+    ${include_root}/observe/preview/observer.h
     ${include_root}/mark/marker.h
     ${include_root}/mark/widget_marker.h
     ${include_root}/mark/widget_tooltip.h)

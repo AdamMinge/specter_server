@@ -5,6 +5,7 @@
 #include <QHash>
 #include <QObject>
 #include <QPointer>
+#include <QQueue>
 #include <QTimer>
 /* ---------------------------------- Standard ------------------------------ */
 #include <condition_variable>

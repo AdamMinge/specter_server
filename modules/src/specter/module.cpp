@@ -4,6 +4,7 @@
 #include "specter/search/strategy.h"
 #include "specter/service/marker.h"
 #include "specter/service/object.h"
+#include "specter/service/previewer.h"
 #include "specter/service/recorder.h"
 /* -------------------------------------------------------------------------- */
 
@@ -27,6 +28,7 @@ SpecterModule::SpecterModule()
   m_server->registerService<RecorderService>();
   m_server->registerService<MarkerService>();
   m_server->registerService<ObjectService>();
+  m_server->registerService<PreviewerService>();
 
   m_searcher->addStrategy(std::make_unique<TypeSearch>());
   m_searcher->addStrategy(std::make_unique<PropertiesSearch>());

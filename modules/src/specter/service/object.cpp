@@ -135,7 +135,7 @@ ObjectGetTreeCall::tree(const QObjectList &objects) const {
   auto objectsToProcess =
     std::queue<std::pair<QObject *, specter_proto::ObjectNode *>>{};
   for (const auto object : objects) {
-    objectsToProcess.push(std::make_pair(object, response.add_nodes()));
+    objectsToProcess.push(std::make_pair(object, response.add_roots()));
   }
 
   while (!objectsToProcess.empty()) {
@@ -150,7 +150,7 @@ ObjectGetTreeCall::tree(const QObjectList &objects) const {
 
     for (const auto child : object->children()) {
       objectsToProcess.push(
-        std::make_pair(child, object_children->add_nodes()));
+        std::make_pair(child, object_children->add_children()));
     }
   }
 
@@ -490,20 +490,45 @@ ObjectGetMethodsCall::methods(const QObject *object) const {
 
   auto meta_object = object->metaObject();
   for (auto i = 0; i < meta_object->methodCount(); ++i) {
-    const auto method = meta_object->method(i);
-    const auto method_name = method.name();
+    const auto meta_method = meta_object->method(i);
 
-    auto parameters = QStringList{};
-    for (auto j = 0; j < method.parameterCount(); ++j) {
-      const auto parameter_type = method.parameterTypeName(j);
-
-      parameters.append(QLatin1String("%1").arg(parameter_type));
+    if (meta_method.access() != QMetaMethod::Access::Public) { continue; }
+    if (
+      meta_method.methodType() != QMetaMethod::Slot &&
+      meta_method.methodType() != QMetaMethod::Method) {
+      continue;
     }
 
-    response.add_methods(QLatin1String("%1(%2)")
-                           .arg(method_name)
-                           .arg(parameters.join(", "))
-                           .toStdString());
+    bool skip_current_method = false;
+    std::vector<std::pair<std::string, QVariant>> collected_parameters_data;
+
+    for (int j = 0; j < meta_method.parameterCount(); ++j) {
+      auto parameter_name = meta_method.parameterNames().at(j).toStdString();
+      if (parameter_name.empty()) {
+        parameter_name = QString("arg%1").arg(QString::number(j)).toStdString();
+      }
+
+      auto parameter_default_value_qvariant =
+        QVariant(QMetaType(meta_method.parameterType(j)));
+      if (!parameter_default_value_qvariant.isValid()) {
+        skip_current_method = true;
+        break;
+      }
+
+      collected_parameters_data.emplace_back(
+        parameter_name, parameter_default_value_qvariant);
+    }
+
+    if (skip_current_method) { continue; }
+    auto proto_method = response.add_methods();
+    proto_method->set_name(QString(meta_method.name()).toStdString());
+
+    for (const auto &param_data : collected_parameters_data) {
+      auto proto_parameter = proto_method->add_parameters();
+      proto_parameter->set_name(param_data.first);
+      *proto_parameter->mutable_default_value() =
+        convertIntoValue(param_data.second);
+    }
   }
 
   return response;
@@ -557,7 +582,7 @@ ObjectGetPropertiesCall::properties(const QObject *object) const {
       !object->metaObject()->property(property_index).isWritable();
 
     auto new_properties = response.add_properties();
-    new_properties->set_property(unique_property);
+    new_properties->set_name(unique_property);
     *new_properties->mutable_value() = convertIntoValue(value);
     new_properties->set_read_only(read_only);
   }

@@ -305,8 +305,12 @@ ObjectCallMethodCall::ProcessResult ObjectCallMethodCall::invoke(
   const google::protobuf::RepeatedPtrField<google::protobuf::Value> &arguments)
   const {
 
-  const auto meta_method = metaMethod(object, method);
+  auto parameters = QVariantList{};
+  for (const auto &argument : arguments) {
+    parameters.push_back(convertIntoVariant(argument));
+  }
 
+  const auto meta_method = metaMethod(object, method, parameters);
   if (!meta_method.isValid()) {
     return {
       grpc::Status(
@@ -317,33 +321,11 @@ ObjectCallMethodCall::ProcessResult ObjectCallMethodCall::invoke(
       {}};
   }
 
-  if (meta_method.parameterCount() != arguments.size()) {
-    return {
-      grpc::Status(
-        grpc::StatusCode::INVALID_ARGUMENT,
-        QLatin1String("Method '%1' parameters count is different from passed.")
-          .arg(method.c_str())
-          .toStdString()),
-      {}};
-  }
-
-  auto parameters = QVariantList{};
   for (auto i = 0; i < meta_method.parameterCount(); ++i) {
     const auto parameter_meta_type = meta_method.parameterMetaType(i);
-    auto parameter = convertIntoVariant(arguments[i]);
+    auto &parameter = parameters[i];
 
-    if (!parameter.convert(parameter_meta_type)) {
-      return {
-        grpc::Status(
-          grpc::StatusCode::INVALID_ARGUMENT,
-          QLatin1String("Method '%1' parameter '%2' is incorrect.")
-            .arg(method.c_str())
-            .arg(parameter.toString())
-            .toStdString()),
-        {}};
-    }
-
-    parameters.push_back(std::move(parameter));
+    parameter.convert(parameter_meta_type);
   }
 
   const auto _generic_arg = [&parameters](auto index) {
@@ -362,12 +344,21 @@ ObjectCallMethodCall::ProcessResult ObjectCallMethodCall::invoke(
 }
 
 QMetaMethod ObjectCallMethodCall::metaMethod(
-  const QObject *object, const std::string &name) const {
+  const QObject *object, const std::string &name,
+  const QVariantList &parameters) const {
   const auto meta_object = object->metaObject();
 
   for (auto i = 0; i < meta_object->methodCount(); ++i) {
     const auto method = meta_object->method(i);
-    if (method.name() == QByteArray::fromStdString(name)) { return method; }
+    if (method.name() != QByteArray::fromStdString(name)) continue;
+    if (method.parameterCount() != parameters.size()) continue;
+
+    for (auto i = 0; i < method.parameterCount(); ++i) {
+      const auto parameter_meta_type = method.parameterMetaType(i);
+      if (!parameters[i].canConvert(parameter_meta_type)) continue;
+    }
+
+    return method;
   }
 
   return QMetaMethod{};

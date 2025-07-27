@@ -130,8 +130,9 @@ private:
     QObject *object, const std::string &method,
     const google::protobuf::RepeatedPtrField<google::protobuf::Value>
       &arguments) const;
-  [[nodiscard]] QMetaMethod
-  metaMethod(const QObject *object, const std::string &name) const;
+  [[nodiscard]] QMetaMethod metaMethod(
+    const QObject *object, const std::string &name,
+    const QVariantList &parameters) const;
 };
 
 /* -------------------------- ObjectUpdatePropertyCall -------------------- */

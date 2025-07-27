@@ -216,7 +216,8 @@ public:
     grpc::ServerCompletionQueue *queue);
   ~ObjectListenTreeChangesCall() override;
 
-  ProcessResult process(const Request &request) const override;
+  StartResult start(const Request &request) const override;
+  ProcessResult process() const override;
 
   std::unique_ptr<ObjectListenTreeChangesCallData> clone() const override;
 
@@ -240,7 +241,8 @@ public:
     grpc::ServerCompletionQueue *queue);
   ~ObjectListenPropertyChangesCall() override;
 
-  ProcessResult process(const Request &request) const override;
+  StartResult start(const Request &request) const override;
+  ProcessResult process() const override;
 
   std::unique_ptr<ObjectListenPropertyChangesCallData> clone() const override;
 

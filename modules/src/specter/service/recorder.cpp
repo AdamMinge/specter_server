@@ -198,9 +198,14 @@ RecorderListenCommandsCall::clone() const {
   return std::make_unique<RecorderListenCommandsCall>(getService(), getQueue());
 }
 
+RecorderListenCommandsCall::StartResult
+RecorderListenCommandsCall::start(const Request &request) const {
+  m_recorder->start();
+  return {};
+}
+
 RecorderListenCommandsCall::ProcessResult
-RecorderListenCommandsCall::process(const Request &request) const {
-  if (!m_recorder->isRecording()) { m_recorder->start(); }
+RecorderListenCommandsCall::process() const {
   if (m_recorder_queue->isEmpty()) return {};
 
   const auto recorded_action = m_recorder_queue->popAction();

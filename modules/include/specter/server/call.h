@@ -139,6 +139,7 @@ protected:
   using Response = RESPONSE;
   using Service = SERVICE;
 
+  using StartResult = std::optional<grpc::Status>;
   using ProcessResult = std::optional<std::variant<grpc::Status, Response>>;
   using RequestMethod = void (Service::*)(
     grpc::ServerContext *, Request *, grpc::ServerAsyncWriter<Response> *,
@@ -156,7 +157,8 @@ public:
   [[nodiscard]] grpc::ServerCompletionQueue *getQueue() const;
 
 protected:
-  [[nodiscard]] virtual ProcessResult process(const Request &request) const = 0;
+  [[nodiscard]] virtual StartResult start(const Request &request) const = 0;
+  [[nodiscard]] virtual ProcessResult process() const = 0;
 
   virtual std::unique_ptr<StreamCallData> clone() const = 0;
 
@@ -189,8 +191,19 @@ StreamCallData<SERVICE, REQUEST, RESPONSE>::~StreamCallData() = default;
 
 template<typename SERVICE, typename REQUEST, typename RESPONSE>
 void StreamCallData<SERVICE, REQUEST, RESPONSE>::proceed() {
+  const auto _start = [this]() {
+    const auto result = start(m_request);
+    if (result.has_value()) {
+      m_responder.Finish(*result, static_cast<void *>(&m_tag));
+      m_status = CallStatus::Finish;
+      return false;
+    }
+
+    return true;
+  };
+
   const auto _process = [this]() {
-    const auto result = process(m_request);
+    const auto result = process();
     if (result.has_value()) {
       if (const auto status = std::get_if<grpc::Status>(&*result); status) {
         m_responder.Finish(*status, static_cast<void *>(&m_tag));
@@ -220,7 +233,7 @@ void StreamCallData<SERVICE, REQUEST, RESPONSE>::proceed() {
       auto cell_data = clone().release();
       cell_data->proceed();
 
-      _process();
+      if (_start()) _process();
       break;
     }
     case CallStatus::Processing: {

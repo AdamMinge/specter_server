@@ -33,17 +33,21 @@ PreviewerListenCommandsCall::clone() const {
     getService(), getQueue());
 }
 
-PreviewerListenCommandsCall::ProcessResult
-PreviewerListenCommandsCall::process(const Request &request) const {
+PreviewerListenCommandsCall::StartResult
+PreviewerListenCommandsCall::start(const Request &request) const {
   const auto query =
     ObjectQuery::fromString(QString::fromStdString(request.query()));
 
   auto [status, object] = tryGetSingleObject(query);
   if (!status.ok()) return status;
 
-  if (!m_observer->isObserving()) { m_observer->start(); }
-  if (m_observer->getObject() != object) { m_observer->setObject(object); }
+  m_observer->setObject(object);
+  m_observer->start();
+  return {};
+}
 
+PreviewerListenCommandsCall::ProcessResult
+PreviewerListenCommandsCall::process() const {
   if (m_observer_queue->isEmpty()) return {};
 
   const auto observer_preview = m_observer_queue->popPreview();

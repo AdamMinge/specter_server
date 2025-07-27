@@ -29,7 +29,8 @@ public:
     grpc::ServerCompletionQueue *queue);
   ~PreviewerListenCommandsCall() override;
 
-  ProcessResult process(const Request &request) const override;
+  StartResult start(const Request &request) const override;
+  ProcessResult process() const override;
 
   std::unique_ptr<PreviewerListenCommandsCallData> clone() const override;
 

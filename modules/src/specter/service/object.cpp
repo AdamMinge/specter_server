@@ -598,9 +598,14 @@ ObjectListenTreeChangesCall::ObjectListenTreeChangesCall(
 
 ObjectListenTreeChangesCall::~ObjectListenTreeChangesCall() = default;
 
+ObjectListenTreeChangesCall::StartResult
+ObjectListenTreeChangesCall::start(const Request &request) const {
+  m_observer->start();
+  return {};
+}
+
 ObjectListenTreeChangesCall::ProcessResult
-ObjectListenTreeChangesCall::process(const Request &request) const {
-  if (!m_observer->isObserving()) { m_observer->start(); }
+ObjectListenTreeChangesCall::process() const {
   if (m_observer_queue->isEmpty()) return {};
 
   const auto observer_action = m_observer_queue->popAction();
@@ -633,17 +638,22 @@ ObjectListenPropertyChangesCall::ObjectListenPropertyChangesCall(
 
 ObjectListenPropertyChangesCall::~ObjectListenPropertyChangesCall() = default;
 
-ObjectListenPropertyChangesCall::ProcessResult
-ObjectListenPropertyChangesCall::process(const Request &request) const {
+ObjectListenPropertyChangesCall::StartResult
+ObjectListenPropertyChangesCall::start(const Request &request) const {
   const auto query =
     ObjectQuery::fromString(QString::fromStdString(request.query()));
 
   auto [status, object] = tryGetSingleObject(query);
   if (!status.ok()) return status;
 
-  if (!m_observer->isObserving()) { m_observer->start(); }
-  if (m_observer->getObject() != object) { m_observer->setObject(object); }
+  m_observer->setObject(object);
+  m_observer->start();
+  return {};
+}
 
+
+ObjectListenPropertyChangesCall::ProcessResult
+ObjectListenPropertyChangesCall::process() const {
   if (m_observer_queue->isEmpty()) return {};
 
   const auto observer_action = m_observer_queue->popAction();

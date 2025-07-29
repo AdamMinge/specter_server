@@ -34,7 +34,6 @@ SpecterModule::SpecterModule()
   m_searcher->addStrategy(std::make_unique<PropertiesSearch>());
   m_searcher->addStrategy(std::make_unique<PathSearch>());
   m_searcher->addStrategy(std::make_unique<OrderIndexSearch>());
-  m_searcher->addStrategy(std::make_unique<SessionIdSearch>());
 }
 
 SpecterModule::~SpecterModule() = default;

@@ -213,30 +213,4 @@ uint OrderIndexSearch::getOrderIndex(const QObject *object) const {
   return topObjects.indexOf(object);
 }
 
-/* ----------------------------- SessionIdSearch ---------------------------- */
-
-SessionIdSearch::SessionIdSearch() = default;
-
-SessionIdSearch::~SessionIdSearch() = default;
-
-bool SessionIdSearch::matchesObjectQuery(
-  const QObject *object, const QVariantMap &query) const {
-  if (query.contains(session_id_query)) {
-    return getSessionId(object) == query[session_id_query];
-  }
-
-  return true;
-}
-
-QVariantMap SessionIdSearch::createObjectQuery(const QObject *object) const {
-  auto query = QVariantMap{};
-  query[session_id_query] = getSessionId(object);
-
-  return query;
-}
-
-uint SessionIdSearch::getSessionId(const QObject *object) const {
-  return reinterpret_cast<uint>(object);
-}
-
 }// namespace specter

@@ -25,6 +25,7 @@ set(sources
     ${source_root}/record/strategy.cpp
     ${source_root}/search/utils.cpp
     ${source_root}/search/query.cpp
+    ${source_root}/search/id.cpp
     ${source_root}/search/searcher.cpp
     ${source_root}/search/strategy.cpp
     ${source_root}/observe/tree/action.cpp
@@ -53,6 +54,7 @@ set(includes
     ${include_root}/record/strategy.h
     ${include_root}/search/utils.h
     ${include_root}/search/query.h
+    ${include_root}/search/id.h
     ${include_root}/search/searcher.h
     ${include_root}/search/strategy.h
     ${include_root}/observe/tree/action.h

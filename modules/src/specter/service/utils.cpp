@@ -354,4 +354,18 @@ tryGetSingleObject(const ObjectQuery &query) {
   return {grpc::Status::OK, objects[0]};
 }
 
+std::pair<grpc::Status, QObject *> tryGetSingleObject(const ObjectId &id) {
+  auto object = searcher().getObject(id);
+
+  if (!object) {
+    return {
+      grpc::Status(
+        grpc::StatusCode::INVALID_ARGUMENT,
+        "There is not object for passed query"),
+      nullptr};
+  }
+
+  return {grpc::Status::OK, object};
+}
+
 }// namespace specter

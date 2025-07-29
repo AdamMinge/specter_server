@@ -35,10 +35,9 @@ PreviewerListenCommandsCall::clone() const {
 
 PreviewerListenCommandsCall::StartResult
 PreviewerListenCommandsCall::start(const Request &request) const {
-  const auto query =
-    ObjectQuery::fromString(QString::fromStdString(request.query()));
+  const auto id = ObjectId::fromString(QString::fromStdString(request.id()));
 
-  auto [status, object] = tryGetSingleObject(query);
+  auto [status, object] = tryGetSingleObject(id);
   if (!status.ok()) return status;
 
   m_observer->setObject(object);

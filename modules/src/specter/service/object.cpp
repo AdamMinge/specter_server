@@ -21,43 +21,45 @@ namespace specter {
 
 class TreeObservedActionsMapper {
 public:
-  specter_proto::ObjectChange
+  specter_proto::TreeChange
   operator()(const TreeObservedAction::ObjectAdded &action) const {
-    specter_proto::ObjectChange response;
+    specter_proto::TreeChange response;
     auto added = response.mutable_added();
-    added->mutable_object()->set_query(action.object.toString().toStdString());
-    added->mutable_parent()->set_query(action.parent.toString().toStdString());
+    added->mutable_object_id()->set_id(
+      action.object_id.toString().toStdString());
+    added->mutable_parent_id()->set_id(
+      action.parent_id.toString().toStdString());
     return response;
   }
 
-  specter_proto::ObjectChange
+  specter_proto::TreeChange
   operator()(const TreeObservedAction::ObjectRemoved &action) const {
-    specter_proto::ObjectChange response;
+    specter_proto::TreeChange response;
     auto removed = response.mutable_removed();
-    removed->mutable_object()->set_query(
-      action.object.toString().toStdString());
+    removed->mutable_object_id()->set_id(
+      action.object_id.toString().toStdString());
     return response;
   }
 
-  specter_proto::ObjectChange
-  operator()(const TreeObservedAction::ObjectReparented &action) const {
-    specter_proto::ObjectChange response;
-    auto reparented = response.mutable_reparented();
-    reparented->mutable_object()->set_query(
-      action.object.toString().toStdString());
-    reparented->mutable_parent()->set_query(
-      action.parent.toString().toStdString());
-    return response;
-  }
-
-  specter_proto::ObjectChange
+  specter_proto::TreeChange
   operator()(const TreeObservedAction::ObjectRenamed &action) const {
-    specter_proto::ObjectChange response;
-    auto renamed = response.mutable_renamed();
-    renamed->mutable_old_object()->set_query(
-      action.old_object.toString().toStdString());
-    renamed->mutable_new_object()->set_query(
-      action.new_object.toString().toStdString());
+    specter_proto::TreeChange response;
+    auto reparented = response.mutable_renamed();
+    reparented->mutable_object_id()->set_id(
+      action.object_id.toString().toStdString());
+    reparented->mutable_object_query()->set_query(
+      action.object_query.toString().toStdString());
+    return response;
+  }
+
+  specter_proto::TreeChange
+  operator()(const TreeObservedAction::ObjectReparented &action) const {
+    specter_proto::TreeChange response;
+    auto reparented = response.mutable_reparented();
+    reparented->mutable_object_id()->set_id(
+      action.object_id.toString().toStdString());
+    reparented->mutable_parent_id()->set_id(
+      action.parent_id.toString().toStdString());
     return response;
   }
 };
@@ -70,7 +72,7 @@ public:
   operator()(const PropertyObservedAction::PropertyAdded &action) const {
     specter_proto::PropertyChange response;
     auto added = response.mutable_added();
-    added->set_property(action.property.toStdString());
+    added->set_property_name(action.property.toStdString());
     *added->mutable_value() = convertIntoValue(action.value);
     added->set_read_only(action.read_only);
     return response;
@@ -80,7 +82,7 @@ public:
   operator()(const PropertyObservedAction::PropertyRemoved &action) const {
     specter_proto::PropertyChange response;
     auto removed = response.mutable_removed();
-    removed->set_property(action.property.toStdString());
+    removed->set_property_name(action.property.toStdString());
     return response;
   }
 
@@ -88,7 +90,7 @@ public:
   operator()(const PropertyObservedAction::PropertyUpdated &action) const {
     specter_proto::PropertyChange response;
     auto updated = response.mutable_updated();
-    updated->set_property(action.property.toStdString());
+    updated->set_property_name(action.property.toStdString());
     *updated->mutable_old_value() = convertIntoValue(action.old_value);
     *updated->mutable_new_value() = convertIntoValue(action.new_value);
     return response;
@@ -114,10 +116,9 @@ ObjectGetTreeCall::ProcessResult
 ObjectGetTreeCall::process(const Request &request) const {
   auto objects = QObjectList{};
 
-  if (request.has_query()) {
-    auto query =
-      ObjectQuery::fromString(QString::fromStdString(request.query()));
-    auto [status, object] = tryGetSingleObject(query);
+  if (request.has_id()) {
+    auto id = ObjectId::fromString(QString::fromStdString(request.id()));
+    auto [status, object] = tryGetSingleObject(id);
     if (!status.ok()) return {status, {}};
     objects.append(object);
   } else {
@@ -144,9 +145,9 @@ ObjectGetTreeCall::tree(const QObjectList &objects) const {
     auto object_children = objectToProcess.second;
     objectsToProcess.pop();
 
-    const auto object_query = searcher().getQuery(object);
-    object_children->mutable_object()->set_query(
-      object_query.toString().toStdString());
+    const auto object_id = searcher().getId(object);
+    object_children->mutable_object_id()->set_id(
+      object_id.toString().toStdString());
 
     for (const auto child : object->children()) {
       objectsToProcess.push(
@@ -189,12 +190,49 @@ ObjectFindCall::Response
 ObjectFindCall::find(const QObjectList &objects) const {
   auto response = ObjectFindCall::Response{};
   for (const auto object : objects) {
-    const auto query = searcher().getQuery(object);
-    response.add_objects()->set_query(query.toString().toStdString());
+    const auto id = searcher().getId(object);
+    response.add_ids()->set_id(id.toString().toStdString());
   }
 
   return response;
 }
+
+/* ------------------------- ObjectGetObjectQueryCallData ------------------- */
+
+ObjectGetObjectQueryCall::ObjectGetObjectQueryCall(
+  specter_proto::ObjectService::AsyncService *service,
+  grpc::ServerCompletionQueue *queue)
+    : CallData(
+        service, queue, CallTag{this},
+        &specter_proto::ObjectService::AsyncService::RequestGetObjectQuery) {}
+
+ObjectGetObjectQueryCall::~ObjectGetObjectQueryCall() = default;
+
+std::unique_ptr<ObjectGetObjectQueryCallData>
+ObjectGetObjectQueryCall::clone() const {
+  return std::make_unique<ObjectGetObjectQueryCall>(getService(), getQueue());
+}
+
+ObjectGetObjectQueryCall::ProcessResult
+ObjectGetObjectQueryCall::process(const Request &request) const {
+  const auto id = ObjectId::fromString(QString::fromStdString(request.id()));
+
+  auto [status, objects] = tryGetSingleObject(id);
+  if (!status.ok()) return {status, {}};
+
+  const auto response = query(objects);
+  return {grpc::Status::OK, response};
+}
+
+ObjectGetObjectQueryCall::Response
+ObjectGetObjectQueryCall::query(const QObject *object) const {
+  auto response = ObjectGetObjectQueryCall::Response{};
+  const auto object_query = searcher().getQuery(object);
+  response.set_query(object_query.toString().toStdString());
+
+  return response;
+}
+
 
 /* ----------------------------- ObjectParentCall ------------------------- */
 
@@ -213,10 +251,9 @@ std::unique_ptr<ObjectParentCallData> ObjectParentCall::clone() const {
 
 ObjectParentCall::ProcessResult
 ObjectParentCall::process(const Request &request) const {
-  const auto query =
-    ObjectQuery::fromString(QString::fromStdString(request.query()));
+  const auto id = ObjectId::fromString(QString::fromStdString(request.id()));
 
-  auto [status, object] = tryGetSingleObject(query);
+  auto [status, object] = tryGetSingleObject(id);
   if (!status.ok()) return {status, {}};
 
   const auto response = parent(object);
@@ -227,9 +264,9 @@ ObjectParentCall::Response
 ObjectParentCall::parent(const QObject *object) const {
   auto response = ObjectParentCall::Response{};
 
-  const auto parent_query =
-    object->parent() ? searcher().getQuery(object->parent()) : ObjectQuery{};
-  response.set_query(parent_query.toString().toStdString());
+  const auto parent_id =
+    object->parent() ? searcher().getId(object->parent()) : ObjectId{};
+  response.set_id(parent_id.toString().toStdString());
 
 
   return response;
@@ -252,10 +289,9 @@ std::unique_ptr<ObjectChildrenCallData> ObjectChildrenCall::clone() const {
 
 ObjectChildrenCall::ProcessResult
 ObjectChildrenCall::process(const Request &request) const {
-  const auto query =
-    ObjectQuery::fromString(QString::fromStdString(request.query()));
+  const auto id = ObjectId::fromString(QString::fromStdString(request.id()));
 
-  auto [status, object] = tryGetSingleObject(query);
+  auto [status, object] = tryGetSingleObject(id);
   if (!status.ok()) return {status, {}};
 
   const auto response = children(object);
@@ -267,8 +303,8 @@ ObjectChildrenCall::children(const QObject *object) const {
   auto response = ObjectChildrenCall::Response{};
 
   for (const auto child : object->children()) {
-    const auto child_query = searcher().getQuery(child);
-    response.add_objects()->set_query(child_query.toString().toStdString());
+    const auto child_id = searcher().getId(child);
+    response.add_ids()->set_id(child_id.toString().toStdString());
   }
 
   return response;
@@ -291,13 +327,13 @@ std::unique_ptr<ObjectCallMethodCallData> ObjectCallMethodCall::clone() const {
 
 ObjectCallMethodCall::ProcessResult
 ObjectCallMethodCall::process(const Request &request) const {
-  const auto query =
-    ObjectQuery::fromString(QString::fromStdString(request.object().query()));
+  const auto id =
+    ObjectId::fromString(QString::fromStdString(request.object_id().id()));
 
-  auto [status, object] = tryGetSingleObject(query);
+  auto [status, object] = tryGetSingleObject(id);
   if (!status.ok()) return {status, {}};
 
-  return invoke(object, request.method(), request.arguments());
+  return invoke(object, request.method_name(), request.arguments());
 }
 
 ObjectCallMethodCall::ProcessResult ObjectCallMethodCall::invoke(
@@ -382,13 +418,13 @@ ObjectUpdatePropertyCall::clone() const {
 
 ObjectUpdatePropertyCall::ProcessResult
 ObjectUpdatePropertyCall::process(const Request &request) const {
-  const auto query =
-    ObjectQuery::fromString(QString::fromStdString(request.object().query()));
+  const auto id =
+    ObjectId::fromString(QString::fromStdString(request.object_id().id()));
 
-  auto [status, object] = tryGetSingleObject(query);
+  auto [status, object] = tryGetSingleObject(id);
   if (!status.ok()) return {status, {}};
 
-  return setProperty(object, request.property(), request.value());
+  return setProperty(object, request.property_name(), request.value());
 }
 
 ObjectUpdatePropertyCall::ProcessResult ObjectUpdatePropertyCall::setProperty(
@@ -466,10 +502,9 @@ std::unique_ptr<ObjectGetMethodsCallData> ObjectGetMethodsCall::clone() const {
 
 ObjectGetMethodsCall::ProcessResult
 ObjectGetMethodsCall::process(const Request &request) const {
-  const auto query =
-    ObjectQuery::fromString(QString::fromStdString(request.query()));
+  const auto id = ObjectId::fromString(QString::fromStdString(request.id()));
 
-  auto [status, object] = tryGetSingleObject(query);
+  auto [status, object] = tryGetSingleObject(id);
   if (!status.ok()) return {status, {}};
 
   return {grpc::Status::OK, methods(object)};
@@ -512,11 +547,11 @@ ObjectGetMethodsCall::methods(const QObject *object) const {
 
     if (skip_current_method) { continue; }
     auto proto_method = response.add_methods();
-    proto_method->set_name(QString(meta_method.name()).toStdString());
+    proto_method->set_method_name(QString(meta_method.name()).toStdString());
 
     for (const auto &param_data : collected_parameters_data) {
       auto proto_parameter = proto_method->add_parameters();
-      proto_parameter->set_name(param_data.first);
+      proto_parameter->set_parameter_name(param_data.first);
       *proto_parameter->mutable_default_value() =
         convertIntoValue(param_data.second);
     }
@@ -543,10 +578,9 @@ ObjectGetPropertiesCall::clone() const {
 
 ObjectGetPropertiesCall::ProcessResult
 ObjectGetPropertiesCall::process(const Request &request) const {
-  const auto query =
-    ObjectQuery::fromString(QString::fromStdString(request.query()));
+  const auto id = ObjectId::fromString(QString::fromStdString(request.id()));
 
-  auto [status, object] = tryGetSingleObject(query);
+  auto [status, object] = tryGetSingleObject(id);
   if (!status.ok()) return {status, {}};
 
   return {grpc::Status::OK, properties(object)};
@@ -573,7 +607,7 @@ ObjectGetPropertiesCall::properties(const QObject *object) const {
       !object->metaObject()->property(property_index).isWritable();
 
     auto new_properties = response.add_properties();
-    new_properties->set_name(unique_property);
+    new_properties->set_property_name(unique_property);
     *new_properties->mutable_value() = convertIntoValue(value);
     new_properties->set_read_only(read_only);
   }
@@ -640,10 +674,9 @@ ObjectListenPropertyChangesCall::~ObjectListenPropertyChangesCall() = default;
 
 ObjectListenPropertyChangesCall::StartResult
 ObjectListenPropertyChangesCall::start(const Request &request) const {
-  const auto query =
-    ObjectQuery::fromString(QString::fromStdString(request.query()));
+  const auto id = ObjectId::fromString(QString::fromStdString(request.id()));
 
-  auto [status, object] = tryGetSingleObject(query);
+  auto [status, object] = tryGetSingleObject(id);
   if (!status.ok()) return status;
 
   m_observer->setObject(object);
@@ -677,6 +710,7 @@ ObjectService::~ObjectService() = default;
 void ObjectService::start(grpc::ServerCompletionQueue *queue) {
   auto get_tree_call = new ObjectGetTreeCall(this, queue);
   auto find_call = new ObjectFindCall(this, queue);
+  auto get_object_query_call = new ObjectGetObjectQueryCall(this, queue);
   auto parent_call = new ObjectParentCall(this, queue);
   auto children_call = new ObjectChildrenCall(this, queue);
   auto call_method_call = new ObjectCallMethodCall(this, queue);
@@ -689,6 +723,7 @@ void ObjectService::start(grpc::ServerCompletionQueue *queue) {
 
   get_tree_call->proceed();
   find_call->proceed();
+  get_object_query_call->proceed();
   parent_call->proceed();
   children_call->proceed();
   call_method_call->proceed();

@@ -9,6 +9,7 @@
 #include <memory>
 /* ----------------------------------- Local -------------------------------- */
 #include "specter/export.h"
+#include "specter/search/id.h"
 #include "specter/search/query.h"
 /* -------------------------------------------------------------------------- */
 
@@ -26,9 +27,11 @@ public:
   ~Searcher() override;
 
   [[nodiscard]] QObject *getObject(const ObjectQuery &query) const;
+  [[nodiscard]] QObject *getObject(const ObjectId &id) const;
   [[nodiscard]] QList<QObject *> getObjects(const ObjectQuery &query) const;
 
   [[nodiscard]] ObjectQuery getQuery(const QObject *object) const;
+  [[nodiscard]] ObjectId getId(const QObject *object) const;
 
   void addStrategy(std::unique_ptr<SearchStrategy> &&strategy);
 

@@ -97,25 +97,6 @@ private:
   [[nodiscard]] uint getOrderIndex(const QObject *object) const;
 };
 
-/* ----------------------------- SessionIdSearch ---------------------------- */
-
-class LIB_SPECTER_API SessionIdSearch : public SearchStrategy {
-public:
-  static constexpr auto session_id_query = "session_id";
-
-public:
-  explicit SessionIdSearch();
-  ~SessionIdSearch() override;
-
-  [[nodiscard]] bool matchesObjectQuery(
-    const QObject *object, const QVariantMap &query) const override;
-  [[nodiscard]] QVariantMap
-  createObjectQuery(const QObject *object) const override;
-
-private:
-  [[nodiscard]] uint getSessionId(const QObject *object) const;
-};
-
 }// namespace specter
 
 #endif// SPECTER_SEARCH_STRATEGY_H

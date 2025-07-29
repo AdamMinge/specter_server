@@ -27,7 +27,7 @@ class PropertyObservedActionsMapper;
 /* ------------------------------- ObjectGetTreeCall ------------------------ */
 
 using ObjectGetTreeCallData = CallData<
-  specter_proto::ObjectService::AsyncService, specter_proto::OptionalObject,
+  specter_proto::ObjectService::AsyncService, specter_proto::OptionalObjectId,
   specter_proto::ObjectTree>;
 
 class LIB_SPECTER_API ObjectGetTreeCall : public ObjectGetTreeCallData {
@@ -48,8 +48,8 @@ private:
 /* -------------------------------- ObjectFindCall -------------------------- */
 
 using ObjectFindCallData = CallData<
-  specter_proto::ObjectService::AsyncService, specter_proto::Object,
-  specter_proto::Objects>;
+  specter_proto::ObjectService::AsyncService, specter_proto::ObjectSearchQuery,
+  specter_proto::ObjectIds>;
 
 class LIB_SPECTER_API ObjectFindCall : public ObjectFindCallData {
 public:
@@ -66,11 +66,33 @@ private:
   [[nodiscard]] Response find(const QObjectList &objects) const;
 };
 
+/* ------------------------- ObjectGetObjectQueryCallData ------------------- */
+
+using ObjectGetObjectQueryCallData = CallData<
+  specter_proto::ObjectService::AsyncService, specter_proto::ObjectId,
+  specter_proto::ObjectSearchQuery>;
+
+class LIB_SPECTER_API ObjectGetObjectQueryCall
+    : public ObjectGetObjectQueryCallData {
+public:
+  explicit ObjectGetObjectQueryCall(
+    specter_proto::ObjectService::AsyncService *service,
+    grpc::ServerCompletionQueue *queue);
+  ~ObjectGetObjectQueryCall() override;
+
+  ProcessResult process(const Request &request) const override;
+
+  std::unique_ptr<ObjectGetObjectQueryCallData> clone() const override;
+
+private:
+  [[nodiscard]] Response query(const QObject *object) const;
+};
+
 /* ------------------------------ ObjectParentCall ------------------------ */
 
 using ObjectParentCallData = CallData<
-  specter_proto::ObjectService::AsyncService, specter_proto::Object,
-  specter_proto::Object>;
+  specter_proto::ObjectService::AsyncService, specter_proto::ObjectId,
+  specter_proto::ObjectId>;
 
 class LIB_SPECTER_API ObjectParentCall : public ObjectParentCallData {
 public:
@@ -90,8 +112,8 @@ private:
 /* ----------------------------- ObjectChildrenCall ----------------------- */
 
 using ObjectChildrenCallData = CallData<
-  specter_proto::ObjectService::AsyncService, specter_proto::Object,
-  specter_proto::Objects>;
+  specter_proto::ObjectService::AsyncService, specter_proto::ObjectId,
+  specter_proto::ObjectIds>;
 
 class LIB_SPECTER_API ObjectChildrenCall : public ObjectChildrenCallData {
 public:
@@ -162,7 +184,7 @@ private:
 /* ---------------------------- ObjectGetMethodsCall ---------------------- */
 
 using ObjectGetMethodsCallData = CallData<
-  specter_proto::ObjectService::AsyncService, specter_proto::Object,
+  specter_proto::ObjectService::AsyncService, specter_proto::ObjectId,
   specter_proto::Methods>;
 
 class LIB_SPECTER_API ObjectGetMethodsCall : public ObjectGetMethodsCallData {
@@ -183,7 +205,7 @@ private:
 /* --------------------------- ObjectGetPropertiesCall -------------------- */
 
 using ObjectGetPropertiesCallData = CallData<
-  specter_proto::ObjectService::AsyncService, specter_proto::Object,
+  specter_proto::ObjectService::AsyncService, specter_proto::ObjectId,
   specter_proto::Properties>;
 
 class LIB_SPECTER_API ObjectGetPropertiesCall
@@ -206,7 +228,7 @@ private:
 
 using ObjectListenTreeChangesCallData = StreamCallData<
   specter_proto::ObjectService::AsyncService, google::protobuf::Empty,
-  specter_proto::ObjectChange>;
+  specter_proto::TreeChange>;
 
 class LIB_SPECTER_API ObjectListenTreeChangesCall
     : public ObjectListenTreeChangesCallData {
@@ -230,7 +252,7 @@ private:
 /* ----------------------- ObjectListenPropertyChangesCall ---------------- */
 
 using ObjectListenPropertyChangesCallData = StreamCallData<
-  specter_proto::ObjectService::AsyncService, specter_proto::Object,
+  specter_proto::ObjectService::AsyncService, specter_proto::ObjectId,
   specter_proto::PropertyChange>;
 
 class LIB_SPECTER_API ObjectListenPropertyChangesCall

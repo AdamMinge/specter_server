@@ -18,7 +18,7 @@ class PreviewObserverQueue;
 /* ------------------------- PreviewerListenCommandsCall -------------------- */
 
 using PreviewerListenCommandsCallData = StreamCallData<
-  specter_proto::PreviewerService::AsyncService, specter_proto::Object,
+  specter_proto::PreviewerService::AsyncService, specter_proto::ObjectId,
   specter_proto::PreviewImage>;
 
 class LIB_SPECTER_API PreviewerListenCommandsCall

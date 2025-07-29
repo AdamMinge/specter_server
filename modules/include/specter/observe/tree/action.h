@@ -7,6 +7,7 @@
 #include <variant>
 /* ----------------------------------- Local -------------------------------- */
 #include "specter/export.h"
+#include "specter/search/id.h"
 #include "specter/search/query.h"
 /* -------------------------------------------------------------------------- */
 
@@ -17,22 +18,22 @@ namespace specter {
 class LIB_SPECTER_API TreeObservedAction {
 public:
   struct ObjectAdded {
-    ObjectQuery object;
-    ObjectQuery parent;
+    ObjectId object_id;
+    ObjectId parent_id;
   };
 
   struct ObjectRemoved {
-    ObjectQuery object;
+    ObjectId object_id;
   };
 
   struct ObjectReparented {
-    ObjectQuery object;
-    ObjectQuery parent;
+    ObjectId object_id;
+    ObjectId parent_id;
   };
 
   struct ObjectRenamed {
-    ObjectQuery old_object;
-    ObjectQuery new_object;
+    ObjectId object_id;
+    ObjectQuery object_query;
   };
 
 public:

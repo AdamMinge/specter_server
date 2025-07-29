@@ -14,10 +14,9 @@ namespace specter {
 
 class LIB_SPECTER_API ObjectQuery {
   friend class Searcher;
-  friend class CommonQueries;
 
 public:
-  [[nodiscard]] static ObjectQuery fromString(const QString &id);
+  [[nodiscard]] static ObjectQuery fromString(const QString &query);
 
 public:
   explicit ObjectQuery();
@@ -33,16 +32,6 @@ protected:
 
 private:
   QVariantMap m_data;
-};
-
-/* --------------------------------- CommonQueries -------------------------- */
-
-class LIB_SPECTER_API CommonQueries {
-public:
-  [[nodiscard]] static ObjectQuery createPathObjectQuery(const QString &path);
-  [[nodiscard]] static ObjectQuery createTypeObjectQuery(const QMetaType &type);
-  [[nodiscard]] static ObjectQuery
-  createPropertiesObjectQuery(const QVariantMap &properties);
 };
 
 }// namespace specter

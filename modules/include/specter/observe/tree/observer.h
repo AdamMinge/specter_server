@@ -14,6 +14,7 @@
 /* ----------------------------------- Local -------------------------------- */
 #include "specter/export.h"
 #include "specter/observe/tree/action.h"
+#include "specter/search/id.h"
 #include "specter/search/query.h"
 /* -------------------------------------------------------------------------- */
 
@@ -43,15 +44,16 @@ private:
 
   void checkForCreatedObjects();
   void checkForDestroyedObjects();
-  void checkForReparentedObjects();
   void checkForRenamedObjects();
+  void checkForReparentedObjects();
 
   [[nodiscard]] QList<QObject *> getTrackedObjectsInDFSOrder() const;
 
 private:
   struct TrackedObjectCache {
-    ObjectQuery query = ObjectQuery{};
-    QPointer<QObject> object = nullptr;
+    ObjectId object_id = ObjectId{};
+    ObjectQuery object_query = ObjectQuery{};
+    QPointer<QObject> object_ptr = nullptr;
     QObject *parent = nullptr;
   };
 

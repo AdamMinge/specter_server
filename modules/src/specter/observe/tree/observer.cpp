@@ -47,8 +47,8 @@ void TreeObserver::stopIntervalCheck() {
 void TreeObserver::intervalCheck() {
   checkForDestroyedObjects();
   checkForCreatedObjects();
-  checkForReparentedObjects();
   checkForRenamedObjects();
+  checkForReparentedObjects();
 }
 
 void TreeObserver::checkForCreatedObjects() {
@@ -60,16 +60,20 @@ void TreeObserver::checkForCreatedObjects() {
     objects.pop();
 
     if (!m_tracked_objects.contains(object)) {
-      auto query = searcher().getQuery(object);
+      auto object_id = searcher().getId(object);
+      auto object_query = searcher().getQuery(object);
       auto parent = object->parent();
-      auto parent_query =
-        parent ? m_tracked_objects.at(parent).query : ObjectQuery{};
+      auto parent_id =
+        parent ? m_tracked_objects.at(parent).object_id : ObjectId{};
 
       m_tracked_objects.insert(
-        std::make_pair(object, TrackedObjectCache{query, object, parent}));
+        std::make_pair(
+          object, TrackedObjectCache{object_id, object_query, object, parent}));
 
       Q_EMIT actionReported(
-        TreeObservedAction::ObjectAdded{query, parent_query});
+        TreeObservedAction::ObjectAdded{object_id, parent_id});
+      Q_EMIT actionReported(
+        TreeObservedAction::ObjectRenamed{object_id, object_query});
     }
 
     for (const auto child : object->children()) { objects.push(child); }
@@ -86,7 +90,7 @@ void TreeObserver::checkForDestroyedObjects() {
       parents.pop();
 
       const auto &cache = m_tracked_objects.at(parent);
-      if (!cache.object) return true;
+      if (!cache.object_ptr) return true;
       if (cache.parent) parents.push(cache.parent);
     }
 
@@ -97,10 +101,24 @@ void TreeObserver::checkForDestroyedObjects() {
   for (auto object : objects) {
     if (toRemove(object)) {
       const auto &cache = m_tracked_objects.at(object);
-      const auto &query = cache.query;
+      const auto &object_id = cache.object_id;
 
-      Q_EMIT actionReported(TreeObservedAction::ObjectRemoved{query});
+      Q_EMIT actionReported(TreeObservedAction::ObjectRemoved{object_id});
       m_tracked_objects.erase(object);
+    }
+  }
+}
+
+void TreeObserver::checkForRenamedObjects() {
+  auto objects = getTrackedObjectsInDFSOrder();
+  for (auto object : objects) {
+    auto &cache = m_tracked_objects.at(object);
+    const auto current_query = searcher().getQuery(object);
+
+    if (cache.object_query != current_query) {
+      Q_EMIT actionReported(
+        TreeObservedAction::ObjectRenamed{cache.object_id, current_query});
+      cache.object_query = current_query;
     }
   }
 }
@@ -109,36 +127,22 @@ void TreeObserver::checkForReparentedObjects() {
   auto objects = getTrackedObjectsInDFSOrder();
   for (auto object : objects) {
     auto &cache = m_tracked_objects.at(object);
-    if (!cache.object) continue;
+    if (!cache.object_ptr) continue;
 
-    const auto &query = cache.query;
+    const auto &object_id = cache.object_id;
     const auto current_parent = object->parent();
 
     auto opt_action = std::optional<TreeObservedAction::ObjectReparented>{};
 
     if (cache.parent != current_parent) {
       opt_action = TreeObservedAction::ObjectReparented{
-        cache.query, current_parent ? m_tracked_objects.at(current_parent).query
-                                    : ObjectQuery{}};
+        object_id, current_parent
+                     ? m_tracked_objects.at(current_parent).object_id
+                     : ObjectId{}};
       cache.parent = current_parent;
     }
 
     if (opt_action) Q_EMIT actionReported(*opt_action);
-  }
-}
-
-void TreeObserver::checkForRenamedObjects() {
-  auto objects = getTrackedObjectsInDFSOrder();
-  for (auto object : objects) {
-    auto &cache = m_tracked_objects.at(object);
-    const auto &query = cache.query;
-    const auto current_query = searcher().getQuery(object);
-
-    if (cache.query != current_query) {
-      Q_EMIT actionReported(
-        TreeObservedAction::ObjectRenamed{cache.query, current_query});
-      cache.query = current_query;
-    }
   }
 }
 

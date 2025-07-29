@@ -23,6 +23,25 @@ QObject *Searcher::getObject(const ObjectQuery &query) const {
   return objects.empty() ? nullptr : objects.first();
 }
 
+QObject *Searcher::getObject(const ObjectId &id) const {
+  const auto top_widgets = getTopLevelObjects();
+  auto objects = std::queue<QObject *>{};
+  for (auto top_widget : top_widgets) {
+    if (!top_widget->parent()) objects.push(top_widget);
+  }
+
+  while (!objects.empty()) {
+    auto object = objects.front();
+    objects.pop();
+
+    if (id == getId(object)) return object;
+
+    for (const auto child : object->children()) { objects.push(child); }
+  }
+
+  return nullptr;
+}
+
 QList<QObject *> Searcher::getObjects(const ObjectQuery &query) const {
   const auto objects = findObjects(query);
   return objects;
@@ -40,6 +59,11 @@ ObjectQuery Searcher::getQuery(const QObject *object) const {
   return ObjectQuery(query);
 }
 
+ObjectId Searcher::getId(const QObject *object) const {
+  if (!object) return ObjectId{};
+  return ObjectId(object);
+}
+
 void Searcher::addStrategy(std::unique_ptr<SearchStrategy> &&strategy) {
   m_strategies.emplace_back(std::move(strategy));
 }
@@ -54,18 +78,18 @@ Searcher::findObjects(const ObjectQuery &query, qsizetype limit) const {
 
   auto found_objects = QList<QObject *>{};
   while (!objects.empty() && found_objects.size() <= limit) {
-    auto parent = objects.front();
+    auto object = objects.front();
     objects.pop();
 
     const auto matches_query = std::all_of(
       m_strategies.begin(), m_strategies.end(),
-      [parent, &query](const auto &search_strategy) {
-        return search_strategy->matchesObjectQuery(parent, query.m_data);
+      [object, &query](const auto &search_strategy) {
+        return search_strategy->matchesObjectQuery(object, query.m_data);
       });
 
-    if (matches_query) { found_objects.push_back(parent); }
+    if (matches_query) { found_objects.push_back(object); }
 
-    for (const auto child : parent->children()) { objects.push(child); }
+    for (const auto child : object->children()) { objects.push(child); }
   }
 
   return found_objects;

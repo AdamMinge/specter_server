@@ -7,7 +7,6 @@
 #include <QTimer>
 /* --------------------------------- Standard ------------------------------- */
 #include <memory>
-#include <thread>
 /* ----------------------------------- Local -------------------------------- */
 #include "specter/export.h"
 /* -------------------------------------------------------------------------- */
@@ -36,6 +35,9 @@ concept IsValidService = std::is_base_of_v<specter::Service, TYPE> &&
 class LIB_SPECTER_API Server : public QObject {
   Q_OBJECT
 
+  static const int poll_batch_size;
+  static const int poll_interval_ms;
+
 public:
   explicit Server();
   ~Server();
@@ -47,12 +49,10 @@ public:
 
 private:
   void startLoop();
-  void processQueue();
 
   std::list<std::unique_ptr<Service>> m_services;
   std::unique_ptr<grpc::Server> m_server;
   std::unique_ptr<grpc::ServerCompletionQueue> m_queue;
-  std::unique_ptr<std::thread> m_process_queue_thread;
 };
 
 template<IsValidService SERVICE, typename... ARGS>

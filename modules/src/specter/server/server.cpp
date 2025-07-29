@@ -14,15 +14,14 @@ namespace specter {
 
 /* ----------------------------------- Server ------------------------------- */
 
+const int Server::poll_batch_size = 10;
+const int Server::poll_interval_ms = 10;
+
 Server::Server() = default;
 
 Server::~Server() {
   m_server->Shutdown();
   m_queue->Shutdown();
-
-  if (m_process_queue_thread && m_process_queue_thread->joinable()) {
-    m_process_queue_thread->join();
-  }
 }
 
 void Server::listen(const QHostAddress &host, quint16 port) {
@@ -47,26 +46,25 @@ void Server::listen(const QHostAddress &host, quint16 port) {
 void Server::startLoop() {
   for (const auto &service : m_services) { service->start(m_queue.get()); }
 
-  m_process_queue_thread =
-    std::make_unique<std::thread>(&Server::processQueue, this);
-}
+  QTimer *timer = new QTimer(this);
+  QObject::connect(timer, &QTimer::timeout, [timer, this]() {
+    void *tag = nullptr;
+    bool ok = false;
 
-void Server::processQueue() {
-  void *tag = nullptr;
-  bool ok = false;
-
-  while (true) {
-    if (m_queue->Next(&tag, &ok)) {
-      auto call_tag = static_cast<CallTag *>(tag);
-      if (call_tag) {
+    for (int i = 0; i < poll_batch_size; ++i) {
+      auto status =
+        m_queue->AsyncNext(&tag, &ok, std::chrono::system_clock::now());
+      if (status == grpc::CompletionQueue::GOT_EVENT) {
+        auto call_tag = static_cast<CallTag *>(tag);
         auto callable = static_cast<Callable *>(call_tag->callable);
-        if (callable) {
-          QMetaObject::invokeMethod(
-            qApp, [callable]() { callable->proceed(); }, Qt::QueuedConnection);
-        }
+        if (callable) callable->proceed(ok);
+      } else if (status != grpc::CompletionQueue::GOT_EVENT) {
+        return;
       }
     }
-  }
+  });
+
+  timer->start(poll_interval_ms);
 }
 
 }// namespace specter

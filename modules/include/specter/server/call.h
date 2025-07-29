@@ -27,7 +27,7 @@ public:
   explicit Callable();
   virtual ~Callable();
 
-  virtual void proceed() = 0;
+  virtual void proceed(bool ok) = 0;
 };
 
 /* ---------------------------------- CallData ------------------------------ */
@@ -53,7 +53,7 @@ public:
     RequestMethod request_method);
   ~CallData() override;
 
-  void proceed() override;
+  void proceed(bool ok = true) override;
 
   [[nodiscard]] Service *getService() const;
   [[nodiscard]] grpc::ServerCompletionQueue *getQueue() const;
@@ -87,7 +87,12 @@ template<typename SERVICE, typename REQUEST, typename RESPONSE>
 CallData<SERVICE, REQUEST, RESPONSE>::~CallData() = default;
 
 template<typename SERVICE, typename REQUEST, typename RESPONSE>
-void CallData<SERVICE, REQUEST, RESPONSE>::proceed() {
+void CallData<SERVICE, REQUEST, RESPONSE>::proceed(bool ok) {
+  if (!ok || m_status == CallStatus::Finish) {
+    delete this;
+    return;
+  }
+
   switch (m_status) {
     case CallStatus::Create: {
       m_status = CallStatus::Process;
@@ -109,9 +114,6 @@ void CallData<SERVICE, REQUEST, RESPONSE>::proceed() {
 
       m_status = CallStatus::Finish;
       break;
-    }
-    default: {
-      delete this;
     }
   }
 }
@@ -151,7 +153,7 @@ public:
     RequestMethod request_method);
   ~StreamCallData() override;
 
-  void proceed() override;
+  void proceed(bool ok = true) override;
 
   [[nodiscard]] Service *getService() const;
   [[nodiscard]] grpc::ServerCompletionQueue *getQueue() const;
@@ -190,7 +192,12 @@ template<typename SERVICE, typename REQUEST, typename RESPONSE>
 StreamCallData<SERVICE, REQUEST, RESPONSE>::~StreamCallData() = default;
 
 template<typename SERVICE, typename REQUEST, typename RESPONSE>
-void StreamCallData<SERVICE, REQUEST, RESPONSE>::proceed() {
+void StreamCallData<SERVICE, REQUEST, RESPONSE>::proceed(bool ok) {
+  if (!ok || m_status == CallStatus::Finish) {
+    delete this;
+    return;
+  }
+
   const auto _start = [this]() {
     const auto result = start(m_request);
     if (result.has_value()) {
@@ -239,9 +246,6 @@ void StreamCallData<SERVICE, REQUEST, RESPONSE>::proceed() {
     case CallStatus::Processing: {
       _process();
       break;
-    }
-    default: {
-      delete this;
     }
   }
 }

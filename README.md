@@ -9,7 +9,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/AdamMinge/specter">
+  <a href="https://github.com/AdamMinge/specter_server">
     <img src="images/logo.png" alt="Logo" width="80" height="80">
   </a>
 
@@ -18,14 +18,14 @@
   <p align="center">
     Specter is a dynamic, injectable C++/Qt DLL that embeds a gRPC server into any Qt-based application, providing structured runtime access to its internal object model. It allows for non-invasive querying, manipulation, and automation of UI elements.
     <br />
-    <a href="https://github.com/AdamMinge/specter"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/AdamMinge/specter_server"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/AdamMinge/specter">View Demo</a>
+    <a href="https://github.com/AdamMinge/specter_server">View Demo</a>
     &middot;
-    <a href="https://github.com/AdamMinge/specter/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
+    <a href="https://github.com/AdamMinge/specter_server/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     &middot;
-    <a href="https://github.com/AdamMinge/specter/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
+    <a href="https://github.com/AdamMinge/specter_server/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
   </p>
 </div>
 
@@ -103,8 +103,8 @@ Or on Windows, install via https://cmake.org/download/
 #### 1. Clone the repository
 
 ```sh
-git clone https://github.com/AdamMinge/specter.git
-cd specter
+git clone https://github.com/AdamMinge/specter_server.git
+cd specter_server
 ```
 
 #### 2. Configure the project with CMake
@@ -136,10 +136,10 @@ cmake --build build/ --config Debug --target all -j 18 --
 <!-- ROADMAP -->
 ## Roadmap
 
-- [ ] Support for listen on property change 
+- [X] Support for listen on property change 
 - [ ] Extended recorder
 
-See the [open issues](https://github.com/AdamMinge/specter/issues) for a full list of proposed features (and known issues).
+See the [open issues](https://github.com/AdamMinge/specter_server/issues) for a full list of proposed features (and known issues).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -161,8 +161,8 @@ Don't forget to give the project a star! Thanks again!
 
 ### Top contributors:
 
-<a href="https://github.com/AdamMinge/specter/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=AdamMinge/specter" alt="contrib.rocks image" />
+<a href="https://github.com/AdamMinge/specter_server/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=AdamMinge/specter_server" alt="contrib.rocks image" />
 </a>
 
 <!-- LICENSE -->
@@ -178,22 +178,22 @@ Distributed under the Unlicense License. See `LICENSE.txt` for more information.
 
 Adam Minge - minge.adam@gmail.com
 
-Project Link: [https://github.com/AdamMinge/specter](https://github.com/AdamMinge/specter)
+Project Link: [https://github.com/AdamMinge/specter_server](https://github.com/AdamMinge/specter_server)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/AdamMinge/specter.svg?style=for-the-badge
-[contributors-url]: https://github.com/AdamMinge/specter/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/AdamMinge/specter.svg?style=for-the-badge
-[forks-url]: https://github.com/AdamMinge/specter/network/members
-[stars-shield]: https://img.shields.io/github/stars/AdamMinge/specter.svg?style=for-the-badge
-[stars-url]: https://github.com/AdamMinge/specter/stargazers
-[issues-shield]: https://img.shields.io/github/issues/AdamMinge/specter.svg?style=for-the-badge
-[issues-url]: https://github.com/AdamMinge/specter/issues
-[license-shield]: https://img.shields.io/github/license/AdamMinge/specter.svg?style=for-the-badge
-[license-url]: https://github.com/AdamMinge/specter/blob/master/LICENSE.txt
+[contributors-shield]: https://img.shields.io/github/contributors/AdamMinge/specter_server.svg?style=for-the-badge
+[contributors-url]: https://github.com/AdamMinge/specter_server/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/AdamMinge/specter_server.svg?style=for-the-badge
+[forks-url]: https://github.com/AdamMinge/specter_server/network/members
+[stars-shield]: https://img.shields.io/github/stars/AdamMinge/specter_server.svg?style=for-the-badge
+[stars-url]: https://github.com/AdamMinge/specter_server/stargazers
+[issues-shield]: https://img.shields.io/github/issues/AdamMinge/specter_server.svg?style=for-the-badge
+[issues-url]: https://github.com/AdamMinge/specter_server/issues
+[license-shield]: https://img.shields.io/github/license/AdamMinge/specter_server.svg?style=for-the-badge
+[license-url]: https://github.com/AdamMinge/specter_server/blob/master/LICENSE.txt
 [cpp]: https://img.shields.io/badge/C++-20+-00599C?logo=c%2b%2b&logoColor=white
 [cpp-url]: https://isocpp.org/
 [cmake]: https://img.shields.io/badge/CMake-3.20+-064F8C?logo=cmake&logoColor=white

@@ -25,6 +25,19 @@
 #include <QMetaObject>
 /* -------------------------------------------------------------------------- */
 
+namespace {
+
+bool regexCompare(const QVariant &variant, const QString &subject) {
+  if (!variant.canConvert<QString>()) return false;
+
+  QRegularExpression re(variant.toString());
+  if (!re.isValid()) { return false; }
+
+  return re.match(subject).hasMatch();
+}
+
+}// namespace
+
 namespace specter {
 
 /* ------------------------------ SearchStrategy ---------------------------- */
@@ -42,7 +55,7 @@ TypeSearch::~TypeSearch() = default;
 bool TypeSearch::matchesObjectQuery(
   const QObject *object, const QVariantMap &query) const {
   if (query.contains(type_query)) {
-    return query[type_query] == object->metaObject()->className();
+    return regexCompare(query[type_query], object->metaObject()->className());
   }
 
   return true;
@@ -152,7 +165,7 @@ PathSearch::~PathSearch() = default;
 bool PathSearch::matchesObjectQuery(
   const QObject *object, const QVariantMap &query) const {
   if (query.contains(path_query)) {
-    return getPath(object).contains(query[path_query].toString());
+    return regexCompare(query[path_query].toString(), getPath(object));
   }
 
   return true;

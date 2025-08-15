@@ -460,10 +460,10 @@ ObjectUpdatePropertyCall::ProcessResult ObjectUpdatePropertyCall::setProperty(
   if (index >= 0) {
     QMetaProperty property = object->metaObject()->property(index);
     if (!property.isWritable()) {
-      QString error_msg = QLatin1String(
-                            "Property '%1' could not be set to '%2'. "
-                            "The property may not exist or is not writable.")
-                            .arg(property_name, new_value.toString());
+      QString error_msg =
+        QLatin1String("Property '%1' could not be set to '%2'. "
+                      "The property may not exist or is not writable.")
+          .arg(property_name, new_value.toString());
       return {
         grpc::Status(
           grpc::StatusCode::INVALID_ARGUMENT, error_msg.toStdString()),

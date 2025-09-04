@@ -2,10 +2,10 @@
 #include "specter/module.h"
 
 #include "specter/search/strategy.h"
-#include "specter/service/marker.h"
-#include "specter/service/object.h"
-#include "specter/service/mouse.h"
 #include "specter/service/keyboard.h"
+#include "specter/service/marker.h"
+#include "specter/service/mouse.h"
+#include "specter/service/object.h"
 #include "specter/service/previewer.h"
 #include "specter/service/recorder.h"
 /* -------------------------------------------------------------------------- */
@@ -26,7 +26,9 @@ void SpecterModule::deleteInstance() { m_instance.reset(nullptr); }
 SpecterModule::SpecterModule()
     : m_server(std::make_unique<Server>()),
       m_marker(std::make_unique<Marker>()),
-      m_searcher(std::make_unique<Searcher>()) {
+      m_searcher(std::make_unique<Searcher>()),
+      m_mouse_controller(std::make_unique<MouseController>()),
+      m_keyboard_controller(std::make_unique<KeyboardController>()) {
   m_server->registerService<RecorderService>();
   m_server->registerService<MarkerService>();
   m_server->registerService<ObjectService>();
@@ -47,5 +49,13 @@ Server &SpecterModule::getServer() const { return *m_server; }
 Marker &SpecterModule::getMarker() const { return *m_marker; }
 
 Searcher &SpecterModule::getSearcher() const { return *m_searcher; }
+
+MouseController &SpecterModule::getMouseController() const {
+  return *m_mouse_controller;
+}
+
+KeyboardController &SpecterModule::getKeyboardController() const {
+  return *m_keyboard_controller;
+}
 
 }// namespace specter

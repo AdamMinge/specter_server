@@ -36,7 +36,8 @@ using KeyboardKeyReleaseCallData = CallData<
   specter_proto::KeyboardService::AsyncService, specter_proto::KeyEvent,
   google::protobuf::Empty>;
 
-class LIB_SPECTER_API KeyboardKeyReleaseCall : public KeyboardKeyReleaseCallData {
+class LIB_SPECTER_API KeyboardKeyReleaseCall
+    : public KeyboardKeyReleaseCallData {
 public:
   explicit KeyboardKeyReleaseCall(
     specter_proto::KeyboardService::AsyncService *service,
@@ -72,7 +73,8 @@ using KeyboardTypeIntoObjectCallData = CallData<
   specter_proto::KeyboardService::AsyncService, specter_proto::ObjectTextInput,
   google::protobuf::Empty>;
 
-class LIB_SPECTER_API KeyboardTypeIntoObjectCall : public KeyboardTypeIntoObjectCallData {
+class LIB_SPECTER_API KeyboardTypeIntoObjectCall
+    : public KeyboardTypeIntoObjectCallData {
 public:
   explicit KeyboardTypeIntoObjectCall(
     specter_proto::KeyboardService::AsyncService *service,

@@ -20,7 +20,9 @@ std::unique_ptr<MouseClickCallData> MouseClickCall::clone() const {
 }
 
 MouseClickCall::ProcessResult
-MouseClickCall::process(const Request &request) const {}
+MouseClickCall::process(const Request &request) const {
+  return {grpc::Status::OK, google::protobuf::Empty{}};
+}
 
 /* ------------------------------ MouseMoveCall --------------------------- */
 
@@ -38,7 +40,9 @@ std::unique_ptr<MouseMoveCallData> MouseMoveCall::clone() const {
 }
 
 MouseMoveCall::ProcessResult
-MouseMoveCall::process(const Request &request) const {}
+MouseMoveCall::process(const Request &request) const {
+  return {grpc::Status::OK, google::protobuf::Empty{}};
+}
 
 /* ------------------------------ MouseScrollCall ------------------------- */
 
@@ -56,7 +60,9 @@ std::unique_ptr<MouseScrollCallData> MouseScrollCall::clone() const {
 }
 
 MouseScrollCall::ProcessResult
-MouseScrollCall::process(const Request &request) const {}
+MouseScrollCall::process(const Request &request) const {
+  return {grpc::Status::OK, google::protobuf::Empty{}};
+}
 
 /* ---------------------------- MouseClickObjectCall ---------------------- */
 
@@ -74,7 +80,9 @@ std::unique_ptr<MouseClickObjectCallData> MouseClickObjectCall::clone() const {
 }
 
 MouseClickObjectCall::ProcessResult
-MouseClickObjectCall::process(const Request &request) const {}
+MouseClickObjectCall::process(const Request &request) const {
+  return {grpc::Status::OK, google::protobuf::Empty{}};
+}
 
 /* ------------------------------ MouseService ---------------------------- */
 

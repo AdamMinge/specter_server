@@ -18,6 +18,8 @@ set(sources
     ${source_root}/service/marker.cpp
     ${source_root}/service/recorder.cpp
     ${source_root}/service/object.cpp
+    ${source_root}/service/keyboard.cpp
+    ${source_root}/service/mouse.cpp
     ${source_root}/service/previewer.cpp
     ${source_root}/service/utils.cpp
     ${source_root}/record/action.cpp
@@ -35,7 +37,9 @@ set(sources
     ${source_root}/observe/preview/observer.cpp
     ${source_root}/mark/marker.cpp
     ${source_root}/mark/widget_marker.cpp
-    ${source_root}/mark/widget_tooltip.cpp)
+    ${source_root}/mark/widget_tooltip.cpp
+    ${source_root}/input/keyboard.cpp
+    ${source_root}/input/mouse.cpp)
 
 set(includes
     ${include_root}/config.h
@@ -47,6 +51,8 @@ set(includes
     ${include_root}/service/marker.h
     ${include_root}/service/recorder.h
     ${include_root}/service/object.h
+    ${include_root}/service/keyboard.h
+    ${include_root}/service/mouse.h
     ${include_root}/service/previewer.h
     ${include_root}/service/utils.h
     ${include_root}/record/action.h
@@ -64,7 +70,9 @@ set(includes
     ${include_root}/observe/preview/observer.h
     ${include_root}/mark/marker.h
     ${include_root}/mark/widget_marker.h
-    ${include_root}/mark/widget_tooltip.h)
+    ${include_root}/mark/widget_tooltip.h
+    ${include_root}/input/keyboard.h
+    ${include_root}/input/mouse.h)
 
 set(resources ${resource_root}/specter.qrc)
 

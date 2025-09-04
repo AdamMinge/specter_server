@@ -20,7 +20,9 @@ std::unique_ptr<KeyboardKeyPressCallData> KeyboardKeyPressCall::clone() const {
 }
 
 KeyboardKeyPressCall::ProcessResult
-KeyboardKeyPressCall::process(const Request &request) const {}
+KeyboardKeyPressCall::process(const Request &request) const {
+  return {grpc::Status::OK, google::protobuf::Empty{}};
+}
 
 /* --------------------------- KeyboardKeyReleaseCall --------------------- */
 
@@ -33,12 +35,15 @@ KeyboardKeyReleaseCall::KeyboardKeyReleaseCall(
 
 KeyboardKeyReleaseCall::~KeyboardKeyReleaseCall() = default;
 
-std::unique_ptr<KeyboardKeyReleaseCallData> KeyboardKeyReleaseCall::clone() const {
+std::unique_ptr<KeyboardKeyReleaseCallData>
+KeyboardKeyReleaseCall::clone() const {
   return std::make_unique<KeyboardKeyReleaseCall>(getService(), getQueue());
 }
 
 KeyboardKeyReleaseCall::ProcessResult
-KeyboardKeyReleaseCall::process(const Request &request) const {}
+KeyboardKeyReleaseCall::process(const Request &request) const {
+  return {grpc::Status::OK, google::protobuf::Empty{}};
+}
 
 /* ----------------------------- KeyboardTypeTextCall --------------------- */
 
@@ -56,7 +61,9 @@ std::unique_ptr<KeyboardTypeTextCallData> KeyboardTypeTextCall::clone() const {
 }
 
 KeyboardTypeTextCall::ProcessResult
-KeyboardTypeTextCall::process(const Request &request) const {}
+KeyboardTypeTextCall::process(const Request &request) const {
+  return {grpc::Status::OK, google::protobuf::Empty{}};
+}
 
 /* -------------------------- KeyboardTypeIntoObjectCall ------------------ */
 
@@ -69,12 +76,15 @@ KeyboardTypeIntoObjectCall::KeyboardTypeIntoObjectCall(
 
 KeyboardTypeIntoObjectCall::~KeyboardTypeIntoObjectCall() = default;
 
-std::unique_ptr<KeyboardTypeIntoObjectCallData> KeyboardTypeIntoObjectCall::clone() const {
+std::unique_ptr<KeyboardTypeIntoObjectCallData>
+KeyboardTypeIntoObjectCall::clone() const {
   return std::make_unique<KeyboardTypeIntoObjectCall>(getService(), getQueue());
 }
 
 KeyboardTypeIntoObjectCall::ProcessResult
-KeyboardTypeIntoObjectCall::process(const Request &request) const {}
+KeyboardTypeIntoObjectCall::process(const Request &request) const {
+  return {grpc::Status::OK, google::protobuf::Empty{}};
+}
 
 /* ------------------------------ KeyboardService ------------------------- */
 

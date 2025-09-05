@@ -8,23 +8,23 @@
 
 namespace specter {
 
-/* ------------------------------ MouseClickCall -------------------------- */
+/* --------------------------- MousePressButtonCall ----------------------- */
 
-MouseClickCall::MouseClickCall(
+MousePressButtonCall::MousePressButtonCall(
   specter_proto::MouseService::AsyncService *service,
   grpc::ServerCompletionQueue *queue)
     : CallData(
         service, queue, CallTag{this},
-        &specter_proto::MouseService::AsyncService::RequestClick) {}
+        &specter_proto::MouseService::AsyncService::RequestPressButton) {}
 
-MouseClickCall::~MouseClickCall() = default;
+MousePressButtonCall::~MousePressButtonCall() = default;
 
-std::unique_ptr<MouseClickCallData> MouseClickCall::clone() const {
-  return std::make_unique<MouseClickCall>(getService(), getQueue());
+std::unique_ptr<MousePressButtonCallData> MousePressButtonCall::clone() const {
+  return std::make_unique<MousePressButtonCall>(getService(), getQueue());
 }
 
-MouseClickCall::ProcessResult
-MouseClickCall::process(const Request &request) const {
+MousePressButtonCall::ProcessResult
+MousePressButtonCall::process(const Request &request) const {
   auto double_click =
     request.has_double_click() ? request.double_click() : false;
 
@@ -42,75 +42,153 @@ MouseClickCall::process(const Request &request) const {
 
 
   auto &controller = mouseController();
-  controller.click(
+  controller.pressButton(
     QPoint(request.offset().x(), request.offset().y()), button, double_click);
 
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }
 
-/* ------------------------------ MouseMoveCall --------------------------- */
+/* -------------------------- MouseReleaseButtonCall ---------------------- */
 
-MouseMoveCall::MouseMoveCall(
+MouseReleaseButtonCall::MouseReleaseButtonCall(
   specter_proto::MouseService::AsyncService *service,
   grpc::ServerCompletionQueue *queue)
     : CallData(
         service, queue, CallTag{this},
-        &specter_proto::MouseService::AsyncService::RequestMove) {}
+        &specter_proto::MouseService::AsyncService::RequestReleaseButton) {}
 
-MouseMoveCall::~MouseMoveCall() = default;
+MouseReleaseButtonCall::~MouseReleaseButtonCall() = default;
 
-std::unique_ptr<MouseMoveCallData> MouseMoveCall::clone() const {
-  return std::make_unique<MouseMoveCall>(getService(), getQueue());
+std::unique_ptr<MouseReleaseButtonCallData>
+MouseReleaseButtonCall::clone() const {
+  return std::make_unique<MouseReleaseButtonCall>(getService(), getQueue());
 }
 
-MouseMoveCall::ProcessResult
-MouseMoveCall::process(const Request &request) const {
+MouseReleaseButtonCall::ProcessResult
+MouseReleaseButtonCall::process(const Request &request) const {
+  Qt::MouseButton button = Qt::LeftButton;
+  switch (request.button()) {
+    case specter_proto::MouseButton::RIGHT:
+      button = Qt::RightButton;
+      break;
+    case specter_proto::MouseButton::MIDDLE:
+      button = Qt::MiddleButton;
+      break;
+    default:
+      break;
+  }
+
+
   auto &controller = mouseController();
-  controller.move(QPoint(request.offset().x(), request.offset().y()));
+  controller.releaseButton(
+    QPoint(request.offset().x(), request.offset().y()), button);
 
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }
 
-/* ------------------------------ MouseScrollCall ------------------------- */
+/* --------------------------- MouseClickButtonCall ----------------------- */
 
-MouseScrollCall::MouseScrollCall(
+MouseClickButtonCall::MouseClickButtonCall(
   specter_proto::MouseService::AsyncService *service,
   grpc::ServerCompletionQueue *queue)
     : CallData(
         service, queue, CallTag{this},
-        &specter_proto::MouseService::AsyncService::RequestScroll) {}
+        &specter_proto::MouseService::AsyncService::RequestClickButton) {}
 
-MouseScrollCall::~MouseScrollCall() = default;
+MouseClickButtonCall::~MouseClickButtonCall() = default;
 
-std::unique_ptr<MouseScrollCallData> MouseScrollCall::clone() const {
-  return std::make_unique<MouseScrollCall>(getService(), getQueue());
+std::unique_ptr<MouseClickButtonCallData> MouseClickButtonCall::clone() const {
+  return std::make_unique<MouseClickButtonCall>(getService(), getQueue());
 }
 
-MouseScrollCall::ProcessResult
-MouseScrollCall::process(const Request &request) const {
+MouseClickButtonCall::ProcessResult
+MouseClickButtonCall::process(const Request &request) const {
+  auto double_click =
+    request.has_double_click() ? request.double_click() : false;
+
+  Qt::MouseButton button = Qt::LeftButton;
+  switch (request.button()) {
+    case specter_proto::MouseButton::RIGHT:
+      button = Qt::RightButton;
+      break;
+    case specter_proto::MouseButton::MIDDLE:
+      button = Qt::MiddleButton;
+      break;
+    default:
+      break;
+  }
+
+
   auto &controller = mouseController();
-  controller.scroll(QPoint(request.delta_x(), request.delta_y()));
+  controller.clickButton(
+    QPoint(request.offset().x(), request.offset().y()), button, double_click);
 
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }
 
-/* ---------------------------- MouseClickObjectCall ---------------------- */
+/* --------------------------- MouseMoveCursorCall ------------------------ */
 
-MouseClickObjectCall::MouseClickObjectCall(
+MouseMoveCursorCall::MouseMoveCursorCall(
   specter_proto::MouseService::AsyncService *service,
   grpc::ServerCompletionQueue *queue)
     : CallData(
         service, queue, CallTag{this},
-        &specter_proto::MouseService::AsyncService::RequestClickObject) {}
+        &specter_proto::MouseService::AsyncService::RequestMoveCursor) {}
 
-MouseClickObjectCall::~MouseClickObjectCall() = default;
+MouseMoveCursorCall::~MouseMoveCursorCall() = default;
 
-std::unique_ptr<MouseClickObjectCallData> MouseClickObjectCall::clone() const {
-  return std::make_unique<MouseClickObjectCall>(getService(), getQueue());
+std::unique_ptr<MouseMoveCursorCallData> MouseMoveCursorCall::clone() const {
+  return std::make_unique<MouseMoveCursorCall>(getService(), getQueue());
 }
 
-MouseClickObjectCall::ProcessResult
-MouseClickObjectCall::process(const Request &request) const {
+MouseMoveCursorCall::ProcessResult
+MouseMoveCursorCall::process(const Request &request) const {
+  auto &controller = mouseController();
+  controller.moveCursor(QPoint(request.offset().x(), request.offset().y()));
+
+  return {grpc::Status::OK, google::protobuf::Empty{}};
+}
+
+/* --------------------------- MouseScrollWheelCall ----------------------- */
+
+MouseScrollWheelCall::MouseScrollWheelCall(
+  specter_proto::MouseService::AsyncService *service,
+  grpc::ServerCompletionQueue *queue)
+    : CallData(
+        service, queue, CallTag{this},
+        &specter_proto::MouseService::AsyncService::RequestScrollWheel) {}
+
+MouseScrollWheelCall::~MouseScrollWheelCall() = default;
+
+std::unique_ptr<MouseScrollWheelCallData> MouseScrollWheelCall::clone() const {
+  return std::make_unique<MouseScrollWheelCall>(getService(), getQueue());
+}
+
+MouseScrollWheelCall::ProcessResult
+MouseScrollWheelCall::process(const Request &request) const {
+  auto &controller = mouseController();
+  controller.scrollWheel(QPoint(request.delta_x(), request.delta_y()));
+
+  return {grpc::Status::OK, google::protobuf::Empty{}};
+}
+
+/* ---------------------------- MouseClickOnObject ------------------------ */
+
+MouseClickOnObject::MouseClickOnObject(
+  specter_proto::MouseService::AsyncService *service,
+  grpc::ServerCompletionQueue *queue)
+    : CallData(
+        service, queue, CallTag{this},
+        &specter_proto::MouseService::AsyncService::RequestClickOnObject) {}
+
+MouseClickOnObject::~MouseClickOnObject() = default;
+
+std::unique_ptr<MouseClickOnObjectData> MouseClickOnObject::clone() const {
+  return std::make_unique<MouseClickOnObject>(getService(), getQueue());
+}
+
+MouseClickOnObject::ProcessResult
+MouseClickOnObject::process(const Request &request) const {
   const auto id =
     ObjectId::fromString(QString::fromStdString(request.object_id().id()));
 
@@ -141,24 +219,24 @@ MouseClickObjectCall::process(const Request &request) const {
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }
 
-/* --------------------------- MouseMoveOverObjectCall -------------------- */
+/* ------------------------- MouseHoverOverObjectCall --------------------- */
 
-MouseMoveOverObjectCall::MouseMoveOverObjectCall(
+MouseHoverOverObjectCall::MouseHoverOverObjectCall(
   specter_proto::MouseService::AsyncService *service,
   grpc::ServerCompletionQueue *queue)
     : CallData(
         service, queue, CallTag{this},
-        &specter_proto::MouseService::AsyncService::RequestMoveOverObject) {}
+        &specter_proto::MouseService::AsyncService::RequestHoverOverObject) {}
 
-MouseMoveOverObjectCall::~MouseMoveOverObjectCall() = default;
+MouseHoverOverObjectCall::~MouseHoverOverObjectCall() = default;
 
-std::unique_ptr<MouseMoveOverObjectCallData>
-MouseMoveOverObjectCall::clone() const {
-  return std::make_unique<MouseMoveOverObjectCall>(getService(), getQueue());
+std::unique_ptr<MouseHoverOverObjectCallData>
+MouseHoverOverObjectCall::clone() const {
+  return std::make_unique<MouseHoverOverObjectCall>(getService(), getQueue());
 }
 
-MouseMoveOverObjectCall::ProcessResult
-MouseMoveOverObjectCall::process(const Request &request) const {
+MouseHoverOverObjectCall::ProcessResult
+MouseHoverOverObjectCall::process(const Request &request) const {
   const auto id =
     ObjectId::fromString(QString::fromStdString(request.object_id().id()));
 
@@ -169,7 +247,7 @@ MouseMoveOverObjectCall::process(const Request &request) const {
                                   : resolvePosition(widget, request.offset());
 
   auto &controller = mouseController();
-  controller.moveOverObject(widget, pos);
+  controller.hoverOverObject(widget, pos);
 
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }
@@ -181,17 +259,21 @@ MouseService::MouseService() = default;
 MouseService::~MouseService() = default;
 
 void MouseService::start(grpc::ServerCompletionQueue *queue) {
-  auto mouse_click_call = new MouseClickCall(this, queue);
-  auto mouse_move_call = new MouseMoveCall(this, queue);
-  auto mouse_scroll_call = new MouseScrollCall(this, queue);
-  auto mouse_click_object_call = new MouseClickObjectCall(this, queue);
-  auto mouse_move_over_object_call = new MouseMoveOverObjectCall(this, queue);
+  auto mouse_press_button_call = new MousePressButtonCall(this, queue);
+  auto mouse_release_button_call = new MouseReleaseButtonCall(this, queue);
+  auto mouse_click_button_call = new MouseClickButtonCall(this, queue);
+  auto mouse_move_cursor_call = new MouseMoveCursorCall(this, queue);
+  auto mouse_scroll_wheel_call = new MouseScrollWheelCall(this, queue);
+  auto mouse_click_on_object_call = new MouseClickOnObject(this, queue);
+  auto mouse_hover_over_object_call = new MouseHoverOverObjectCall(this, queue);
 
-  mouse_click_call->proceed();
-  mouse_move_call->proceed();
-  mouse_scroll_call->proceed();
-  mouse_click_object_call->proceed();
-  mouse_move_over_object_call->proceed();
+  mouse_press_button_call->proceed();
+  mouse_release_button_call->proceed();
+  mouse_click_button_call->proceed();
+  mouse_move_cursor_call->proceed();
+  mouse_scroll_wheel_call->proceed();
+  mouse_click_on_object_call->proceed();
+  mouse_hover_over_object_call->proceed();
 }
 
 }// namespace specter

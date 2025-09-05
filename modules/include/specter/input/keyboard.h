@@ -16,11 +16,12 @@ public:
   explicit KeyboardController();
   ~KeyboardController() override;
 
-  void keyPress(Qt::Key key, Qt::KeyboardModifiers mods = Qt::NoModifier);
-  void keyRelease(Qt::Key key, Qt::KeyboardModifiers mods = Qt::NoModifier);
-  void typeText(const QString &text);
+  void pressKey(Qt::Key key, Qt::KeyboardModifiers mods = Qt::NoModifier);
+  void releaseKey(Qt::Key key, Qt::KeyboardModifiers mods = Qt::NoModifier);
+  void tapKey(Qt::Key key, Qt::KeyboardModifiers mods = Qt::NoModifier);
 
-  void typeTextIntoObject(QWidget *widget, const QString &text);
+  void enterText(const QString &text);
+  void enterTextIntoObject(QWidget *widget, const QString &text);
 };
 
 }// namespace specter

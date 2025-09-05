@@ -12,78 +12,96 @@
 
 namespace specter {
 
-/* ----------------------------- KeyboardKeyPressCall --------------------- */
+/* ----------------------------- KeyboardPressKeyCall --------------------- */
 
-using KeyboardKeyPressCallData = CallData<
+using KeyboardPressKeyCallData = CallData<
   specter_proto::KeyboardService::AsyncService, specter_proto::KeyEvent,
   google::protobuf::Empty>;
 
-class LIB_SPECTER_API KeyboardKeyPressCall : public KeyboardKeyPressCallData {
+class LIB_SPECTER_API KeyboardPressKeyCall : public KeyboardPressKeyCallData {
 public:
-  explicit KeyboardKeyPressCall(
+  explicit KeyboardPressKeyCall(
     specter_proto::KeyboardService::AsyncService *service,
     grpc::ServerCompletionQueue *queue);
-  ~KeyboardKeyPressCall() override;
+  ~KeyboardPressKeyCall() override;
 
   ProcessResult process(const Request &request) const override;
 
-  std::unique_ptr<KeyboardKeyPressCallData> clone() const override;
+  std::unique_ptr<KeyboardPressKeyCallData> clone() const override;
 };
 
-/* --------------------------- KeyboardKeyReleaseCall --------------------- */
+/* --------------------------- KeyboardReleaseKeyCall --------------------- */
 
-using KeyboardKeyReleaseCallData = CallData<
+using KeyboardReleaseKeyCallData = CallData<
   specter_proto::KeyboardService::AsyncService, specter_proto::KeyEvent,
   google::protobuf::Empty>;
 
-class LIB_SPECTER_API KeyboardKeyReleaseCall
-    : public KeyboardKeyReleaseCallData {
+class LIB_SPECTER_API KeyboardReleaseKeyCall
+    : public KeyboardReleaseKeyCallData {
 public:
-  explicit KeyboardKeyReleaseCall(
+  explicit KeyboardReleaseKeyCall(
     specter_proto::KeyboardService::AsyncService *service,
     grpc::ServerCompletionQueue *queue);
-  ~KeyboardKeyReleaseCall() override;
+  ~KeyboardReleaseKeyCall() override;
 
   ProcessResult process(const Request &request) const override;
 
-  std::unique_ptr<KeyboardKeyReleaseCallData> clone() const override;
+  std::unique_ptr<KeyboardReleaseKeyCallData> clone() const override;
 };
 
-/* ----------------------------- KeyboardTypeTextCall --------------------- */
+/* ----------------------------- KeyboardTapKeyCall ----------------------- */
 
-using KeyboardTypeTextCallData = CallData<
+using KeyboardTapKeyCallData = CallData<
+  specter_proto::KeyboardService::AsyncService, specter_proto::KeyEvent,
+  google::protobuf::Empty>;
+
+class LIB_SPECTER_API KeyboardTapKeyCall : public KeyboardTapKeyCallData {
+public:
+  explicit KeyboardTapKeyCall(
+    specter_proto::KeyboardService::AsyncService *service,
+    grpc::ServerCompletionQueue *queue);
+  ~KeyboardTapKeyCall() override;
+
+  ProcessResult process(const Request &request) const override;
+
+  std::unique_ptr<KeyboardTapKeyCallData> clone() const override;
+};
+
+/* ----------------------------- KeyboardEnterTextCall -------------------- */
+
+using KeyboardEnterTextCallData = CallData<
   specter_proto::KeyboardService::AsyncService, specter_proto::TextInput,
   google::protobuf::Empty>;
 
-class LIB_SPECTER_API KeyboardTypeTextCall : public KeyboardTypeTextCallData {
+class LIB_SPECTER_API KeyboardEnterTextCall : public KeyboardEnterTextCallData {
 public:
-  explicit KeyboardTypeTextCall(
+  explicit KeyboardEnterTextCall(
     specter_proto::KeyboardService::AsyncService *service,
     grpc::ServerCompletionQueue *queue);
-  ~KeyboardTypeTextCall() override;
+  ~KeyboardEnterTextCall() override;
 
   ProcessResult process(const Request &request) const override;
 
-  std::unique_ptr<KeyboardTypeTextCallData> clone() const override;
+  std::unique_ptr<KeyboardEnterTextCallData> clone() const override;
 };
 
-/* -------------------------- KeyboardTypeIntoObjectCall ------------------ */
+/* ------------------------ KeyboardEnterTextIntoObjectCall --------------- */
 
-using KeyboardTypeIntoObjectCallData = CallData<
+using KeyboardEnterTextIntoObjectCallData = CallData<
   specter_proto::KeyboardService::AsyncService, specter_proto::ObjectTextInput,
   google::protobuf::Empty>;
 
-class LIB_SPECTER_API KeyboardTypeIntoObjectCall
-    : public KeyboardTypeIntoObjectCallData {
+class LIB_SPECTER_API KeyboardEnterTextIntoObjectCall
+    : public KeyboardEnterTextIntoObjectCallData {
 public:
-  explicit KeyboardTypeIntoObjectCall(
+  explicit KeyboardEnterTextIntoObjectCall(
     specter_proto::KeyboardService::AsyncService *service,
     grpc::ServerCompletionQueue *queue);
-  ~KeyboardTypeIntoObjectCall() override;
+  ~KeyboardEnterTextIntoObjectCall() override;
 
   ProcessResult process(const Request &request) const override;
 
-  std::unique_ptr<KeyboardTypeIntoObjectCallData> clone() const override;
+  std::unique_ptr<KeyboardEnterTextIntoObjectCallData> clone() const override;
 };
 
 /* ------------------------------ KeyboardService ------------------------- */

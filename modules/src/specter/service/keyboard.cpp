@@ -8,23 +8,23 @@
 
 namespace specter {
 
-/* ----------------------------- KeyboardKeyPressCall --------------------- */
+/* ----------------------------- KeyboardPressKeyCall --------------------- */
 
-KeyboardKeyPressCall::KeyboardKeyPressCall(
+KeyboardPressKeyCall::KeyboardPressKeyCall(
   specter_proto::KeyboardService::AsyncService *service,
   grpc::ServerCompletionQueue *queue)
     : CallData(
         service, queue, CallTag{this},
-        &specter_proto::KeyboardService::AsyncService::RequestKeyPress) {}
+        &specter_proto::KeyboardService::AsyncService::RequestPressKey) {}
 
-KeyboardKeyPressCall::~KeyboardKeyPressCall() = default;
+KeyboardPressKeyCall::~KeyboardPressKeyCall() = default;
 
-std::unique_ptr<KeyboardKeyPressCallData> KeyboardKeyPressCall::clone() const {
-  return std::make_unique<KeyboardKeyPressCall>(getService(), getQueue());
+std::unique_ptr<KeyboardPressKeyCallData> KeyboardPressKeyCall::clone() const {
+  return std::make_unique<KeyboardPressKeyCall>(getService(), getQueue());
 }
 
-KeyboardKeyPressCall::ProcessResult
-KeyboardKeyPressCall::process(const Request &request) const {
+KeyboardPressKeyCall::ProcessResult
+KeyboardPressKeyCall::process(const Request &request) const {
   Qt::KeyboardModifiers mods = Qt::NoModifier;
   if (request.ctrl()) mods |= Qt::ControlModifier;
   if (request.alt()) mods |= Qt::AltModifier;
@@ -34,29 +34,29 @@ KeyboardKeyPressCall::process(const Request &request) const {
   auto key = static_cast<Qt::Key>(request.key_code());
 
   auto &controller = keyboardController();
-  controller.keyPress(key, mods);
+  controller.pressKey(key, mods);
 
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }
 
-/* --------------------------- KeyboardKeyReleaseCall --------------------- */
+/* --------------------------- KeyboardReleaseKeyCall --------------------- */
 
-KeyboardKeyReleaseCall::KeyboardKeyReleaseCall(
+KeyboardReleaseKeyCall::KeyboardReleaseKeyCall(
   specter_proto::KeyboardService::AsyncService *service,
   grpc::ServerCompletionQueue *queue)
     : CallData(
         service, queue, CallTag{this},
-        &specter_proto::KeyboardService::AsyncService::RequestKeyRelease) {}
+        &specter_proto::KeyboardService::AsyncService::RequestReleaseKey) {}
 
-KeyboardKeyReleaseCall::~KeyboardKeyReleaseCall() = default;
+KeyboardReleaseKeyCall::~KeyboardReleaseKeyCall() = default;
 
-std::unique_ptr<KeyboardKeyReleaseCallData>
-KeyboardKeyReleaseCall::clone() const {
-  return std::make_unique<KeyboardKeyReleaseCall>(getService(), getQueue());
+std::unique_ptr<KeyboardReleaseKeyCallData>
+KeyboardReleaseKeyCall::clone() const {
+  return std::make_unique<KeyboardReleaseKeyCall>(getService(), getQueue());
 }
 
-KeyboardKeyReleaseCall::ProcessResult
-KeyboardKeyReleaseCall::process(const Request &request) const {
+KeyboardReleaseKeyCall::ProcessResult
+KeyboardReleaseKeyCall::process(const Request &request) const {
   Qt::KeyboardModifiers mods = Qt::NoModifier;
   if (request.ctrl()) mods |= Qt::ControlModifier;
   if (request.alt()) mods |= Qt::AltModifier;
@@ -66,52 +66,86 @@ KeyboardKeyReleaseCall::process(const Request &request) const {
   auto key = static_cast<Qt::Key>(request.key_code());
 
   auto &controller = keyboardController();
-  controller.keyPress(key, mods);
+  controller.releaseKey(key, mods);
 
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }
 
-/* ----------------------------- KeyboardTypeTextCall --------------------- */
+/* ----------------------------- KeyboardTapKeyCall ----------------------- */
 
-KeyboardTypeTextCall::KeyboardTypeTextCall(
+KeyboardTapKeyCall::KeyboardTapKeyCall(
   specter_proto::KeyboardService::AsyncService *service,
   grpc::ServerCompletionQueue *queue)
     : CallData(
         service, queue, CallTag{this},
-        &specter_proto::KeyboardService::AsyncService::RequestTypeText) {}
+        &specter_proto::KeyboardService::AsyncService::RequestTapKey) {}
 
-KeyboardTypeTextCall::~KeyboardTypeTextCall() = default;
+KeyboardTapKeyCall::~KeyboardTapKeyCall() = default;
 
-std::unique_ptr<KeyboardTypeTextCallData> KeyboardTypeTextCall::clone() const {
-  return std::make_unique<KeyboardTypeTextCall>(getService(), getQueue());
+std::unique_ptr<KeyboardTapKeyCallData> KeyboardTapKeyCall::clone() const {
+  return std::make_unique<KeyboardTapKeyCall>(getService(), getQueue());
 }
 
-KeyboardTypeTextCall::ProcessResult
-KeyboardTypeTextCall::process(const Request &request) const {
+KeyboardTapKeyCall::ProcessResult
+KeyboardTapKeyCall::process(const Request &request) const {
+  Qt::KeyboardModifiers mods = Qt::NoModifier;
+  if (request.ctrl()) mods |= Qt::ControlModifier;
+  if (request.alt()) mods |= Qt::AltModifier;
+  if (request.shift()) mods |= Qt::ShiftModifier;
+  if (request.meta()) mods |= Qt::MetaModifier;
+
+  auto key = static_cast<Qt::Key>(request.key_code());
+
   auto &controller = keyboardController();
-  controller.typeText(QString::fromStdString(request.text()));
+  controller.tapKey(key, mods);
 
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }
 
-/* -------------------------- KeyboardTypeIntoObjectCall ------------------ */
+/* ----------------------------- KeyboardEnterTextCall -------------------- */
 
-KeyboardTypeIntoObjectCall::KeyboardTypeIntoObjectCall(
+KeyboardEnterTextCall::KeyboardEnterTextCall(
   specter_proto::KeyboardService::AsyncService *service,
   grpc::ServerCompletionQueue *queue)
     : CallData(
         service, queue, CallTag{this},
-        &specter_proto::KeyboardService::AsyncService::RequestTypeIntoObject) {}
+        &specter_proto::KeyboardService::AsyncService::RequestEnterText) {}
 
-KeyboardTypeIntoObjectCall::~KeyboardTypeIntoObjectCall() = default;
+KeyboardEnterTextCall::~KeyboardEnterTextCall() = default;
 
-std::unique_ptr<KeyboardTypeIntoObjectCallData>
-KeyboardTypeIntoObjectCall::clone() const {
-  return std::make_unique<KeyboardTypeIntoObjectCall>(getService(), getQueue());
+std::unique_ptr<KeyboardEnterTextCallData>
+KeyboardEnterTextCall::clone() const {
+  return std::make_unique<KeyboardEnterTextCall>(getService(), getQueue());
 }
 
-KeyboardTypeIntoObjectCall::ProcessResult
-KeyboardTypeIntoObjectCall::process(const Request &request) const {
+KeyboardEnterTextCall::ProcessResult
+KeyboardEnterTextCall::process(const Request &request) const {
+  auto &controller = keyboardController();
+  controller.enterText(QString::fromStdString(request.text()));
+
+  return {grpc::Status::OK, google::protobuf::Empty{}};
+}
+
+/* ------------------------ KeyboardEnterTextIntoObjectCall --------------- */
+
+KeyboardEnterTextIntoObjectCall::KeyboardEnterTextIntoObjectCall(
+  specter_proto::KeyboardService::AsyncService *service,
+  grpc::ServerCompletionQueue *queue)
+    : CallData(
+        service, queue, CallTag{this},
+        &specter_proto::KeyboardService::AsyncService::
+          RequestEnterTextIntoObject) {}
+
+KeyboardEnterTextIntoObjectCall::~KeyboardEnterTextIntoObjectCall() = default;
+
+std::unique_ptr<KeyboardEnterTextIntoObjectCallData>
+KeyboardEnterTextIntoObjectCall::clone() const {
+  return std::make_unique<KeyboardEnterTextIntoObjectCall>(
+    getService(), getQueue());
+}
+
+KeyboardEnterTextIntoObjectCall::ProcessResult
+KeyboardEnterTextIntoObjectCall::process(const Request &request) const {
   const auto id =
     ObjectId::fromString(QString::fromStdString(request.object_id().id()));
 
@@ -119,7 +153,8 @@ KeyboardTypeIntoObjectCall::process(const Request &request) const {
   if (!status.ok()) return {status, {}};
 
   auto &controller = keyboardController();
-  controller.typeTextIntoObject(widget, QString::fromStdString(request.text()));
+  controller.enterTextIntoObject(
+    widget, QString::fromStdString(request.text()));
 
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }
@@ -131,15 +166,16 @@ KeyboardService::KeyboardService() = default;
 KeyboardService::~KeyboardService() = default;
 
 void KeyboardService::start(grpc::ServerCompletionQueue *queue) {
-  auto key_press_call = new KeyboardKeyPressCall(this, queue);
-  auto key_release_call = new KeyboardKeyReleaseCall(this, queue);
-  auto type_text_call = new KeyboardTypeTextCall(this, queue);
-  auto type_into_object_call = new KeyboardTypeIntoObjectCall(this, queue);
+  auto press_key_call = new KeyboardPressKeyCall(this, queue);
+  auto release_key_call = new KeyboardReleaseKeyCall(this, queue);
+  auto enter_text_call = new KeyboardEnterTextCall(this, queue);
+  auto enter_text_into_object_call =
+    new KeyboardEnterTextIntoObjectCall(this, queue);
 
-  key_press_call->proceed();
-  key_release_call->proceed();
-  type_text_call->proceed();
-  type_into_object_call->proceed();
+  press_key_call->proceed();
+  release_key_call->proceed();
+  enter_text_call->proceed();
+  enter_text_into_object_call->proceed();
 }
 
 }// namespace specter

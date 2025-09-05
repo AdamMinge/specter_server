@@ -15,33 +15,30 @@ KeyboardController::KeyboardController() = default;
 
 KeyboardController::~KeyboardController() = default;
 
-void KeyboardController::keyPress(Qt::Key key, Qt::KeyboardModifiers mods) {
+void KeyboardController::pressKey(Qt::Key key, Qt::KeyboardModifiers mods) {
   auto press = new QKeyEvent(QEvent::KeyPress, key, mods);
   QCoreApplication::postEvent(QApplication::focusWidget(), press);
 }
 
-void KeyboardController::keyRelease(Qt::Key key, Qt::KeyboardModifiers mods) {
+void KeyboardController::releaseKey(Qt::Key key, Qt::KeyboardModifiers mods) {
   auto release = new QKeyEvent(QEvent::KeyRelease, key, mods);
   QCoreApplication::postEvent(QApplication::focusWidget(), release);
 }
 
-void KeyboardController::typeText(const QString &text) {
-  auto target = QApplication::focusWidget();
-  if (!target) return;
-
-  for (auto c : text) {
-    auto key_press =
-      new QKeyEvent(QEvent::KeyPress, c.unicode(), Qt::NoModifier, QString(c));
-    QCoreApplication::postEvent(target, key_press);
-
-    auto key_release = new QKeyEvent(
-      QEvent::KeyRelease, c.unicode(), Qt::NoModifier, QString(c));
-    QCoreApplication::postEvent(target, key_release);
-  }
+void KeyboardController::tapKey(Qt::Key key, Qt::KeyboardModifiers mods) {
+  pressKey(key, mods);
+  releaseKey(key, mods);
 }
 
-void KeyboardController::typeTextIntoObject(
+void KeyboardController::enterText(const QString &text) {
+  auto widget = QApplication::focusWidget();
+  enterTextIntoObject(widget, text);
+}
+
+void KeyboardController::enterTextIntoObject(
   QWidget *widget, const QString &text) {
+  if (!widget) return;
+
   if (auto line_edit = qobject_cast<QLineEdit *>(widget)) {
     line_edit->setText(text);
   } else if (auto text_edit = qobject_cast<QTextEdit *>(widget)) {
@@ -49,8 +46,15 @@ void KeyboardController::typeTextIntoObject(
   } else if (auto plain_edit = qobject_cast<QPlainTextEdit *>(widget)) {
     plain_edit->setPlainText(text);
   } else {
-    widget->setFocus();
-    typeText(text);
+    for (auto c : text) {
+      auto key_press = new QKeyEvent(
+        QEvent::KeyPress, c.unicode(), Qt::NoModifier, QString(c));
+      QCoreApplication::postEvent(widget, key_press);
+
+      auto key_release = new QKeyEvent(
+        QEvent::KeyRelease, c.unicode(), Qt::NoModifier, QString(c));
+      QCoreApplication::postEvent(widget, key_release);
+    }
   }
 }
 

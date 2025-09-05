@@ -12,95 +12,132 @@
 
 namespace specter {
 
-/* ------------------------------ MouseClickCall -------------------------- */
+/* --------------------------- MousePressButtonCall ----------------------- */
 
-using MouseClickCallData = CallData<
-  specter_proto::MouseService::AsyncService, specter_proto::MouseClick,
+using MousePressButtonCallData = CallData<
+  specter_proto::MouseService::AsyncService, specter_proto::MouseEvent,
   google::protobuf::Empty>;
 
-class LIB_SPECTER_API MouseClickCall : public MouseClickCallData {
+class LIB_SPECTER_API MousePressButtonCall : public MousePressButtonCallData {
 public:
-  explicit MouseClickCall(
+  explicit MousePressButtonCall(
     specter_proto::MouseService::AsyncService *service,
     grpc::ServerCompletionQueue *queue);
-  ~MouseClickCall() override;
+  ~MousePressButtonCall() override;
 
   ProcessResult process(const Request &request) const override;
 
-  std::unique_ptr<MouseClickCallData> clone() const override;
+  std::unique_ptr<MousePressButtonCallData> clone() const override;
 };
 
-/* ------------------------------ MouseMoveCall --------------------------- */
+/* -------------------------- MouseReleaseButtonCall ---------------------- */
 
-using MouseMoveCallData = CallData<
-  specter_proto::MouseService::AsyncService, specter_proto::MouseMove,
+using MouseReleaseButtonCallData = CallData<
+  specter_proto::MouseService::AsyncService, specter_proto::MouseEvent,
   google::protobuf::Empty>;
 
-class LIB_SPECTER_API MouseMoveCall : public MouseMoveCallData {
+class LIB_SPECTER_API MouseReleaseButtonCall
+    : public MouseReleaseButtonCallData {
 public:
-  explicit MouseMoveCall(
+  explicit MouseReleaseButtonCall(
     specter_proto::MouseService::AsyncService *service,
     grpc::ServerCompletionQueue *queue);
-  ~MouseMoveCall() override;
+  ~MouseReleaseButtonCall() override;
 
   ProcessResult process(const Request &request) const override;
 
-  std::unique_ptr<MouseMoveCallData> clone() const override;
+  std::unique_ptr<MouseReleaseButtonCallData> clone() const override;
 };
 
-/* ------------------------------ MouseScrollCall ------------------------- */
+/* --------------------------- MouseClickButtonCall ----------------------- */
 
-using MouseScrollCallData = CallData<
-  specter_proto::MouseService::AsyncService, specter_proto::MouseScroll,
+using MouseClickButtonCallData = CallData<
+  specter_proto::MouseService::AsyncService, specter_proto::MouseEvent,
   google::protobuf::Empty>;
 
-class LIB_SPECTER_API MouseScrollCall : public MouseScrollCallData {
+class LIB_SPECTER_API MouseClickButtonCall : public MouseClickButtonCallData {
 public:
-  explicit MouseScrollCall(
+  explicit MouseClickButtonCall(
     specter_proto::MouseService::AsyncService *service,
     grpc::ServerCompletionQueue *queue);
-  ~MouseScrollCall() override;
+  ~MouseClickButtonCall() override;
 
   ProcessResult process(const Request &request) const override;
 
-  std::unique_ptr<MouseScrollCallData> clone() const override;
+  std::unique_ptr<MouseClickButtonCallData> clone() const override;
 };
 
-/* ---------------------------- MouseClickObjectCall ---------------------- */
+/* --------------------------- MouseMoveCursorCall ------------------------ */
 
-using MouseClickObjectCallData = CallData<
-  specter_proto::MouseService::AsyncService, specter_proto::ObjectMouseClick,
+using MouseMoveCursorCallData = CallData<
+  specter_proto::MouseService::AsyncService, specter_proto::CursorMove,
   google::protobuf::Empty>;
 
-class LIB_SPECTER_API MouseClickObjectCall : public MouseClickObjectCallData {
+class LIB_SPECTER_API MouseMoveCursorCall : public MouseMoveCursorCallData {
 public:
-  explicit MouseClickObjectCall(
+  explicit MouseMoveCursorCall(
     specter_proto::MouseService::AsyncService *service,
     grpc::ServerCompletionQueue *queue);
-  ~MouseClickObjectCall() override;
+  ~MouseMoveCursorCall() override;
 
   ProcessResult process(const Request &request) const override;
 
-  std::unique_ptr<MouseClickObjectCallData> clone() const override;
+  std::unique_ptr<MouseMoveCursorCallData> clone() const override;
 };
 
-/* --------------------------- MouseMoveOverObjectCall -------------------- */
+/* --------------------------- MouseScrollWheelCall ----------------------- */
 
-using MouseMoveOverObjectCallData = CallData<
-  specter_proto::MouseService::AsyncService, specter_proto::ObjectMouseMove,
+using MouseScrollWheelCallData = CallData<
+  specter_proto::MouseService::AsyncService, specter_proto::WheelScroll,
   google::protobuf::Empty>;
 
-class LIB_SPECTER_API MouseMoveOverObjectCall
-    : public MouseMoveOverObjectCallData {
+class LIB_SPECTER_API MouseScrollWheelCall : public MouseScrollWheelCallData {
 public:
-  explicit MouseMoveOverObjectCall(
+  explicit MouseScrollWheelCall(
     specter_proto::MouseService::AsyncService *service,
     grpc::ServerCompletionQueue *queue);
-  ~MouseMoveOverObjectCall() override;
+  ~MouseScrollWheelCall() override;
 
   ProcessResult process(const Request &request) const override;
 
-  std::unique_ptr<MouseMoveOverObjectCallData> clone() const override;
+  std::unique_ptr<MouseScrollWheelCallData> clone() const override;
+};
+
+/* ---------------------------- MouseClickOnObject ------------------------ */
+
+using MouseClickOnObjectData = CallData<
+  specter_proto::MouseService::AsyncService, specter_proto::ObjectClick,
+  google::protobuf::Empty>;
+
+class LIB_SPECTER_API MouseClickOnObject : public MouseClickOnObjectData {
+public:
+  explicit MouseClickOnObject(
+    specter_proto::MouseService::AsyncService *service,
+    grpc::ServerCompletionQueue *queue);
+  ~MouseClickOnObject() override;
+
+  ProcessResult process(const Request &request) const override;
+
+  std::unique_ptr<MouseClickOnObjectData> clone() const override;
+};
+
+/* ------------------------- MouseHoverOverObjectCall --------------------- */
+
+using MouseHoverOverObjectCallData = CallData<
+  specter_proto::MouseService::AsyncService, specter_proto::ObjectHover,
+  google::protobuf::Empty>;
+
+class LIB_SPECTER_API MouseHoverOverObjectCall
+    : public MouseHoverOverObjectCallData {
+public:
+  explicit MouseHoverOverObjectCall(
+    specter_proto::MouseService::AsyncService *service,
+    grpc::ServerCompletionQueue *queue);
+  ~MouseHoverOverObjectCall() override;
+
+  ProcessResult process(const Request &request) const override;
+
+  std::unique_ptr<MouseHoverOverObjectCallData> clone() const override;
 };
 
 /* ------------------------------- MouseService --------------------------- */

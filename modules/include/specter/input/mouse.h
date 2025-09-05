@@ -16,14 +16,16 @@ public:
   explicit MouseController();
   ~MouseController() override;
 
-  void move(const QPoint &pos);
-  void click(const QPoint &pos, Qt::MouseButton button, bool doubleClick);
-  void scroll(const QPoint &delta);
+  void pressButton(const QPoint &pos, Qt::MouseButton button, bool doubleClick);
+  void releaseButton(const QPoint &pos, Qt::MouseButton button);
+  void clickButton(const QPoint &pos, Qt::MouseButton button, bool doubleClick);
+  void moveCursor(const QPoint &pos);
+  void scrollWheel(const QPoint &delta);
 
   void clickOnObject(
     QWidget *widget, const QPoint &pos, Qt::MouseButton button,
     bool doubleClick);
-  void moveOverObject(QWidget *widget, const QPoint &pos);
+  void hoverOverObject(QWidget *widget, const QPoint &pos);
 };
 
 }// namespace specter

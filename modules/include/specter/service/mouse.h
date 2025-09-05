@@ -84,6 +84,25 @@ public:
   std::unique_ptr<MouseClickObjectCallData> clone() const override;
 };
 
+/* --------------------------- MouseMoveOverObjectCall -------------------- */
+
+using MouseMoveOverObjectCallData = CallData<
+  specter_proto::MouseService::AsyncService, specter_proto::ObjectMouseMove,
+  google::protobuf::Empty>;
+
+class LIB_SPECTER_API MouseMoveOverObjectCall
+    : public MouseMoveOverObjectCallData {
+public:
+  explicit MouseMoveOverObjectCall(
+    specter_proto::MouseService::AsyncService *service,
+    grpc::ServerCompletionQueue *queue);
+  ~MouseMoveOverObjectCall() override;
+
+  ProcessResult process(const Request &request) const override;
+
+  std::unique_ptr<MouseMoveOverObjectCallData> clone() const override;
+};
+
 /* ------------------------------- MouseService --------------------------- */
 
 class MouseService

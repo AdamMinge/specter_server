@@ -32,6 +32,7 @@ service MouseService {
     rpc Scroll (MouseScroll) returns (google.protobuf.Empty) {}
 
     rpc ClickObject (ObjectMouseClick) returns (google.protobuf.Empty) {}
+    rpc MoveOverObject (ObjectMouseMove) returns (google.protobuf.Empty) {}
 }
 
 // ---------------------------- KeyboardService ------------------------------ //
@@ -188,21 +189,33 @@ message PropertyUpdated {
     google.protobuf.Value new_value = 3;
 }
 
-message MouseClick {
+enum MouseButton {
+    LEFT = 0;
+    RIGHT = 1;
+    MIDDLE = 2;
+}
+
+message Offset {
     int32 x = 1;
     int32 y = 2;
-    enum Button {
-        LEFT = 0;
-        RIGHT = 1;
-        MIDDLE = 2;
-    }
-    Button button = 3;
-    bool double_click = 4;
+}
+
+enum Anchor {
+    CENTER       = 0;
+    LEFT_UP      = 1;
+    RIGHT_UP     = 2;
+    LEFT_BOTTOM  = 3;
+    RIGHT_BOTTOM = 4;
+}
+
+message MouseClick {
+    Offset offset = 1;
+    MouseButton button = 2;
+    optional bool double_click = 3;
 }
 
 message MouseMove {
-    int32 x = 1;
-    int32 y = 2;
+    Offset offset = 1;
 }
 
 message MouseScroll {
@@ -212,16 +225,28 @@ message MouseScroll {
 
 message ObjectMouseClick {
     ObjectId object_id = 1;
-    MouseClick.Button button = 2;
-    bool double_click = 3;
+    MouseButton button = 2;
+    optional bool double_click = 3;
+    oneof position {
+        Offset offset = 4;
+        Anchor anchor = 5;
+    }
+}
+
+message ObjectMouseMove {
+    ObjectId object_id = 1;
+    oneof position {
+        Offset offset = 2;
+        Anchor anchor = 3;
+    }
 }
 
 message KeyEvent {
-    string key = 1; 
-    bool ctrl = 2;
-    bool alt = 3;
-    bool shift = 4;
-    bool meta = 5;
+    int32 key_code = 1; 
+    optional bool ctrl = 2;
+    optional bool alt = 3;
+    optional bool shift = 4;
+    optional bool meta = 5;
 }
 
 message TextInput {

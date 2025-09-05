@@ -20,7 +20,7 @@ public:
   void keyRelease(Qt::Key key, Qt::KeyboardModifiers mods = Qt::NoModifier);
   void typeText(const QString &text);
 
-  void typeIntoObject(QWidget *widget, const QString &text);
+  void typeTextIntoObject(QWidget *widget, const QString &text);
 };
 
 }// namespace specter

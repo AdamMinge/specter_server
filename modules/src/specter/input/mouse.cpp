@@ -12,60 +12,62 @@ MouseController::MouseController() = default;
 
 MouseController::~MouseController() = default;
 
-void MouseController::move(int x, int y) {
-  auto widget = QApplication::widgetAt(x, y);
+void MouseController::move(const QPoint &pos) {
+  auto widget = QApplication::widgetAt(pos);
   if (!widget) return;
 
-  auto globalPos = QPoint(x, y);
-  auto pos = QPoint(
-    x - widget->mapToGlobal(QPoint(0, 0)).x(),
-    y - widget->mapToGlobal(QPoint(0, 0)).y());
+  auto local_pos = QPoint(
+    pos.x() - widget->mapToGlobal(QPoint(0, 0)).x(),
+    pos.y() - widget->mapToGlobal(QPoint(0, 0)).y());
 
-  auto moveEvent = new QMouseEvent(
-    QEvent::MouseMove, pos, pos, globalPos, Qt::NoButton, Qt::NoButton,
+  auto move_event = new QMouseEvent(
+    QEvent::MouseMove, local_pos, local_pos, pos, Qt::NoButton, Qt::NoButton,
     Qt::NoModifier);
-  QCoreApplication::postEvent(widget, moveEvent);
+  QCoreApplication::postEvent(widget, move_event);
 }
 
 void MouseController::click(
-  int x, int y, Qt::MouseButton button, bool doubleClick) {
-  QWidget *widget = QApplication::widgetAt(x, y);
+  const QPoint &pos, Qt::MouseButton button, bool doubleClick) {
+  auto widget = QApplication::widgetAt(pos);
   if (!widget) return;
 
-  auto globalPos = QPoint(x, y);
-  auto pos = widget->mapFromGlobal(globalPos);
+  auto local_pos = widget->mapFromGlobal(pos);
   auto type =
     doubleClick ? QEvent::MouseButtonDblClick : QEvent::MouseButtonPress;
 
-  auto press =
-    new QMouseEvent(type, pos, pos, globalPos, button, button, Qt::NoModifier);
+  auto press = new QMouseEvent(
+    type, local_pos, local_pos, pos, button, button, Qt::NoModifier);
   QCoreApplication::postEvent(widget, press);
 
   auto release = new QMouseEvent(
-    QEvent::MouseButtonRelease, pos, pos, globalPos, button, Qt::NoButton,
+    QEvent::MouseButtonRelease, local_pos, local_pos, pos, button, Qt::NoButton,
     Qt::NoModifier);
   QCoreApplication::postEvent(widget, release);
 }
 
-void MouseController::scroll(int deltaX, int deltaY) {
-  auto globalPos = QCursor::pos();
-  auto widget = QApplication::widgetAt(globalPos);
+void MouseController::scroll(const QPoint &delta) {
+  auto global_pos = QCursor::pos();
+  auto widget = QApplication::widgetAt(global_pos);
   if (!widget) return;
 
-  auto pos = widget->mapFromGlobal(globalPos);
+  auto local_pos = widget->mapFromGlobal(global_pos);
 
   auto wheel = new QWheelEvent(
-    pos, globalPos, QPoint(), QPoint(deltaX, deltaY), Qt::NoButton,
-    Qt::NoModifier, Qt::NoScrollPhase, false);
+    local_pos, global_pos, QPoint(), delta, Qt::NoButton, Qt::NoModifier,
+    Qt::NoScrollPhase, false);
   QCoreApplication::postEvent(widget, wheel);
 }
 
 void MouseController::clickOnObject(
-  QWidget *widget, Qt::MouseButton button, bool doubleClick) {
-  QPoint pos = widget->rect().center();
-  QPoint globalPos = widget->mapToGlobal(pos);
+  QWidget *widget, const QPoint &pos, Qt::MouseButton button,
+  bool doubleClick) {
+  auto global_pos = widget->mapToGlobal(pos);
+  click(global_pos, button, doubleClick);
+}
 
-  click(globalPos.x(), globalPos.y(), button, doubleClick);
+void MouseController::moveOverObject(QWidget *widget, const QPoint &pos) {
+  auto global_pos = widget->mapToGlobal(pos);
+  move(global_pos);
 }
 
 }// namespace specter

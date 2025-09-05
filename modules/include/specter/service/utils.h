@@ -7,6 +7,7 @@
 /* ------------------------------------ Qt ---------------------------------- */
 #include <QObject>
 #include <QVariant>
+#include <QWidget>
 /* ----------------------------------- Local -------------------------------- */
 #include "specter/export.h"
 #include "specter/search/id.h"
@@ -22,6 +23,12 @@ std::pair<grpc::Status, QObjectList> tryGetObjects(const ObjectQuery &query);
 
 std::pair<grpc::Status, QObject *> tryGetSingleObject(const ObjectQuery &query);
 std::pair<grpc::Status, QObject *> tryGetSingleObject(const ObjectId &query);
+
+std::pair<grpc::Status, QWidget *> tryGetSingleWidget(const ObjectQuery &query);
+std::pair<grpc::Status, QWidget *> tryGetSingleWidget(const ObjectId &query);
+
+QPoint resolvePosition(QWidget *widget, const specter_proto::Offset &offset);
+QPoint resolvePosition(QWidget *widget, const specter_proto::Anchor &anchor);
 
 }// namespace specter
 

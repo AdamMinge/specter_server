@@ -361,11 +361,66 @@ std::pair<grpc::Status, QObject *> tryGetSingleObject(const ObjectId &id) {
     return {
       grpc::Status(
         grpc::StatusCode::INVALID_ARGUMENT,
-        "There is not object for passed query"),
+        "There is not object for passed id"),
       nullptr};
   }
 
   return {grpc::Status::OK, object};
+}
+
+std::pair<grpc::Status, QWidget *>
+tryGetSingleWidget(const ObjectQuery &query) {
+  auto [status, object] = tryGetSingleObject(query);
+  if (!status.ok()) return {status, nullptr};
+
+  auto widget = qobject_cast<QWidget *>(object);
+  if (!widget) {
+    return {
+      grpc::Status(
+        grpc::StatusCode::INVALID_ARGUMENT,
+        "There is not widget for passed query"),
+      nullptr};
+  }
+
+  return {grpc::Status::OK, widget};
+}
+
+std::pair<grpc::Status, QWidget *> tryGetSingleWidget(const ObjectId &query) {
+  auto [status, object] = tryGetSingleObject(query);
+  if (!status.ok()) return {status, nullptr};
+
+  auto widget = qobject_cast<QWidget *>(object);
+  if (!widget) {
+    return {
+      grpc::Status(
+        grpc::StatusCode::INVALID_ARGUMENT,
+        "There is not widget for passed id"),
+      nullptr};
+  }
+
+  return {grpc::Status::OK, widget};
+}
+
+QPoint resolvePosition(QWidget *widget, const specter_proto::Offset &offset) {
+  return QPoint(offset.x(), offset.y());
+}
+
+QPoint resolvePosition(QWidget *widget, const specter_proto::Anchor &anchor) {
+  QRect r = widget->rect();
+  switch (anchor) {
+    case specter_proto::CENTER:
+      return r.center();
+    case specter_proto::LEFT_UP:
+      return r.topLeft();
+    case specter_proto::RIGHT_UP:
+      return r.topRight();
+    case specter_proto::LEFT_BOTTOM:
+      return r.bottomLeft();
+    case specter_proto::RIGHT_BOTTOM:
+      return r.bottomRight();
+  }
+
+  return QPoint{};
 }
 
 }// namespace specter

@@ -30,23 +30,24 @@ void KeyboardController::typeText(const QString &text) {
   if (!target) return;
 
   for (auto c : text) {
-    auto keyPress =
+    auto key_press =
       new QKeyEvent(QEvent::KeyPress, c.unicode(), Qt::NoModifier, QString(c));
-    QCoreApplication::postEvent(target, keyPress);
+    QCoreApplication::postEvent(target, key_press);
 
-    auto keyRelease = new QKeyEvent(
+    auto key_release = new QKeyEvent(
       QEvent::KeyRelease, c.unicode(), Qt::NoModifier, QString(c));
-    QCoreApplication::postEvent(target, keyRelease);
+    QCoreApplication::postEvent(target, key_release);
   }
 }
 
-void KeyboardController::typeIntoObject(QWidget *widget, const QString &text) {
-  if (auto lineEdit = qobject_cast<QLineEdit *>(widget)) {
-    lineEdit->setText(text);
-  } else if (auto textEdit = qobject_cast<QTextEdit *>(widget)) {
-    textEdit->setPlainText(text);
-  } else if (auto plainEdit = qobject_cast<QPlainTextEdit *>(widget)) {
-    plainEdit->setPlainText(text);
+void KeyboardController::typeTextIntoObject(
+  QWidget *widget, const QString &text) {
+  if (auto line_edit = qobject_cast<QLineEdit *>(widget)) {
+    line_edit->setText(text);
+  } else if (auto text_edit = qobject_cast<QTextEdit *>(widget)) {
+    text_edit->setPlainText(text);
+  } else if (auto plain_edit = qobject_cast<QPlainTextEdit *>(widget)) {
+    plain_edit->setPlainText(text);
   } else {
     widget->setFocus();
     typeText(text);

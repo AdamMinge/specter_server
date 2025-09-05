@@ -1,5 +1,9 @@
 /* ----------------------------------- Local -------------------------------- */
 #include "specter/service/keyboard.h"
+
+#include "specter/module.h"
+#include "specter/search/utils.h"
+#include "specter/service/utils.h"
 /* -------------------------------------------------------------------------- */
 
 namespace specter {
@@ -21,6 +25,17 @@ std::unique_ptr<KeyboardKeyPressCallData> KeyboardKeyPressCall::clone() const {
 
 KeyboardKeyPressCall::ProcessResult
 KeyboardKeyPressCall::process(const Request &request) const {
+  Qt::KeyboardModifiers mods = Qt::NoModifier;
+  if (request.ctrl()) mods |= Qt::ControlModifier;
+  if (request.alt()) mods |= Qt::AltModifier;
+  if (request.shift()) mods |= Qt::ShiftModifier;
+  if (request.meta()) mods |= Qt::MetaModifier;
+
+  auto key = static_cast<Qt::Key>(request.key_code());
+
+  auto &controller = keyboardController();
+  controller.keyPress(key, mods);
+
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }
 
@@ -42,6 +57,17 @@ KeyboardKeyReleaseCall::clone() const {
 
 KeyboardKeyReleaseCall::ProcessResult
 KeyboardKeyReleaseCall::process(const Request &request) const {
+  Qt::KeyboardModifiers mods = Qt::NoModifier;
+  if (request.ctrl()) mods |= Qt::ControlModifier;
+  if (request.alt()) mods |= Qt::AltModifier;
+  if (request.shift()) mods |= Qt::ShiftModifier;
+  if (request.meta()) mods |= Qt::MetaModifier;
+
+  auto key = static_cast<Qt::Key>(request.key_code());
+
+  auto &controller = keyboardController();
+  controller.keyPress(key, mods);
+
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }
 
@@ -62,6 +88,9 @@ std::unique_ptr<KeyboardTypeTextCallData> KeyboardTypeTextCall::clone() const {
 
 KeyboardTypeTextCall::ProcessResult
 KeyboardTypeTextCall::process(const Request &request) const {
+  auto &controller = keyboardController();
+  controller.typeText(QString::fromStdString(request.text()));
+
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }
 
@@ -83,6 +112,15 @@ KeyboardTypeIntoObjectCall::clone() const {
 
 KeyboardTypeIntoObjectCall::ProcessResult
 KeyboardTypeIntoObjectCall::process(const Request &request) const {
+  const auto id =
+    ObjectId::fromString(QString::fromStdString(request.object_id().id()));
+
+  auto [status, widget] = tryGetSingleWidget(id);
+  if (!status.ok()) return {status, {}};
+
+  auto &controller = keyboardController();
+  controller.typeTextIntoObject(widget, QString::fromStdString(request.text()));
+
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }
 

@@ -1,6 +1,7 @@
 /* ----------------------------------- Local -------------------------------- */
 #include "specter/service/keyboard.h"
 
+#include "specter/input/utils.h"
 #include "specter/module.h"
 #include "specter/search/utils.h"
 #include "specter/service/utils.h"
@@ -33,8 +34,17 @@ KeyboardPressKeyCall::process(const Request &request) const {
 
   auto key = static_cast<Qt::Key>(request.key_code());
 
+  auto target = getTargetWidget();
+  if (target) {
+    return {
+      grpc::Status(
+        grpc::StatusCode::INVALID_ARGUMENT,
+        "Failed to press key: no active or focused widget found"),
+      {}};
+  }
+
   auto &controller = keyboardController();
-  controller.pressKey(key, mods);
+  controller.pressKey(target, key, mods);
 
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }
@@ -65,8 +75,17 @@ KeyboardReleaseKeyCall::process(const Request &request) const {
 
   auto key = static_cast<Qt::Key>(request.key_code());
 
+  auto target = getTargetWidget();
+  if (target) {
+    return {
+      grpc::Status(
+        grpc::StatusCode::INVALID_ARGUMENT,
+        "Failed to release key: no active or focused widget found"),
+      {}};
+  }
+
   auto &controller = keyboardController();
-  controller.releaseKey(key, mods);
+  controller.releaseKey(target, key, mods);
 
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }
@@ -96,8 +115,17 @@ KeyboardTapKeyCall::process(const Request &request) const {
 
   auto key = static_cast<Qt::Key>(request.key_code());
 
+  auto target = getTargetWidget();
+  if (target) {
+    return {
+      grpc::Status(
+        grpc::StatusCode::INVALID_ARGUMENT,
+        "Failed to tap key: no active or focused widget found"),
+      {}};
+  }
+
   auto &controller = keyboardController();
-  controller.tapKey(key, mods);
+  controller.tapKey(target, key, mods);
 
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }
@@ -120,8 +148,17 @@ KeyboardEnterTextCall::clone() const {
 
 KeyboardEnterTextCall::ProcessResult
 KeyboardEnterTextCall::process(const Request &request) const {
+  auto target = getTargetWidget();
+  if (target) {
+    return {
+      grpc::Status(
+        grpc::StatusCode::INVALID_ARGUMENT,
+        "Failed to enter text: no active or focused widget found"),
+      {}};
+  }
+
   auto &controller = keyboardController();
-  controller.enterText(QString::fromStdString(request.text()));
+  controller.enterText(target, QString::fromStdString(request.text()));
 
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }
@@ -149,12 +186,11 @@ KeyboardEnterTextIntoObjectCall::process(const Request &request) const {
   const auto id =
     ObjectId::fromString(QString::fromStdString(request.object_id().id()));
 
-  auto [status, widget] = tryGetSingleWidget(id);
+  auto [status, target] = tryGetSingleWidget(id);
   if (!status.ok()) return {status, {}};
 
   auto &controller = keyboardController();
-  controller.enterTextIntoObject(
-    widget, QString::fromStdString(request.text()));
+  controller.enterText(target, QString::fromStdString(request.text()));
 
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }

@@ -39,7 +39,8 @@ set(sources
     ${source_root}/mark/widget_marker.cpp
     ${source_root}/mark/widget_tooltip.cpp
     ${source_root}/input/keyboard.cpp
-    ${source_root}/input/mouse.cpp)
+    ${source_root}/input/mouse.cpp
+    ${source_root}/input/utils.cpp)
 
 set(includes
     ${include_root}/config.h
@@ -72,7 +73,8 @@ set(includes
     ${include_root}/mark/widget_marker.h
     ${include_root}/mark/widget_tooltip.h
     ${include_root}/input/keyboard.h
-    ${include_root}/input/mouse.h)
+    ${include_root}/input/mouse.h
+    ${include_root}/input/utils.h)
 
 set(resources ${resource_root}/specter.qrc)
 

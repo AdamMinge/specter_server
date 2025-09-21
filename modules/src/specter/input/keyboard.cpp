@@ -1,7 +1,6 @@
 /* ----------------------------------- Local -------------------------------- */
 #include "specter/input/keyboard.h"
 /* ------------------------------------ Qt ---------------------------------- */
-#include <QApplication>
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QPlainTextEdit>
@@ -15,45 +14,48 @@ KeyboardController::KeyboardController() = default;
 
 KeyboardController::~KeyboardController() = default;
 
-void KeyboardController::pressKey(Qt::Key key, Qt::KeyboardModifiers mods) {
+void KeyboardController::pressKey(
+  QWidget *target, Qt::Key key, Qt::KeyboardModifiers mods) {
+  if (!target) return;
+
   auto press = new QKeyEvent(QEvent::KeyPress, key, mods);
-  QCoreApplication::postEvent(QApplication::focusWidget(), press);
+  QCoreApplication::postEvent(target, press);
 }
 
-void KeyboardController::releaseKey(Qt::Key key, Qt::KeyboardModifiers mods) {
+void KeyboardController::releaseKey(
+  QWidget *target, Qt::Key key, Qt::KeyboardModifiers mods) {
+  if (!target) return;
+
   auto release = new QKeyEvent(QEvent::KeyRelease, key, mods);
-  QCoreApplication::postEvent(QApplication::focusWidget(), release);
+  QCoreApplication::postEvent(target, release);
 }
 
-void KeyboardController::tapKey(Qt::Key key, Qt::KeyboardModifiers mods) {
-  pressKey(key, mods);
-  releaseKey(key, mods);
+void KeyboardController::tapKey(
+  QWidget *target, Qt::Key key, Qt::KeyboardModifiers mods) {
+  if (!target) return;
+
+  pressKey(target, key, mods);
+  releaseKey(target, key, mods);
 }
 
-void KeyboardController::enterText(const QString &text) {
-  auto widget = QApplication::focusWidget();
-  enterTextIntoObject(widget, text);
-}
+void KeyboardController::enterText(QWidget *target, const QString &text) {
+  if (!target) return;
 
-void KeyboardController::enterTextIntoObject(
-  QWidget *widget, const QString &text) {
-  if (!widget) return;
-
-  if (auto line_edit = qobject_cast<QLineEdit *>(widget)) {
+  if (auto line_edit = qobject_cast<QLineEdit *>(target)) {
     line_edit->setText(text);
-  } else if (auto text_edit = qobject_cast<QTextEdit *>(widget)) {
+  } else if (auto text_edit = qobject_cast<QTextEdit *>(target)) {
     text_edit->setPlainText(text);
-  } else if (auto plain_edit = qobject_cast<QPlainTextEdit *>(widget)) {
+  } else if (auto plain_edit = qobject_cast<QPlainTextEdit *>(target)) {
     plain_edit->setPlainText(text);
   } else {
     for (auto c : text) {
       auto key_press = new QKeyEvent(
         QEvent::KeyPress, c.unicode(), Qt::NoModifier, QString(c));
-      QCoreApplication::postEvent(widget, key_press);
+      QCoreApplication::postEvent(target, key_press);
 
       auto key_release = new QKeyEvent(
         QEvent::KeyRelease, c.unicode(), Qt::NoModifier, QString(c));
-      QCoreApplication::postEvent(widget, key_release);
+      QCoreApplication::postEvent(target, key_release);
     }
   }
 }

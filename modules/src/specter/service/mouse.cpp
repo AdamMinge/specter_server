@@ -1,6 +1,7 @@
 /* ----------------------------------- Local -------------------------------- */
 #include "specter/service/mouse.h"
 
+#include "specter/input/utils.h"
 #include "specter/module.h"
 #include "specter/search/utils.h"
 #include "specter/service/utils.h"
@@ -40,10 +41,18 @@ MousePressButtonCall::process(const Request &request) const {
       break;
   }
 
+  auto offset = QPoint(request.offset().x(), request.offset().y());
+  auto target = getTargetWidget(offset);
+  if (target) {
+    return {
+      grpc::Status(
+        grpc::StatusCode::INVALID_ARGUMENT,
+        "Failed to press button: no active or focused widget found"),
+      {}};
+  }
 
   auto &controller = mouseController();
-  controller.pressButton(
-    QPoint(request.offset().x(), request.offset().y()), button, double_click);
+  controller.pressButton(target, offset, button, double_click);
 
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }
@@ -78,10 +87,18 @@ MouseReleaseButtonCall::process(const Request &request) const {
       break;
   }
 
+  auto offset = QPoint(request.offset().x(), request.offset().y());
+  auto target = getTargetWidget(offset);
+  if (target) {
+    return {
+      grpc::Status(
+        grpc::StatusCode::INVALID_ARGUMENT,
+        "Failed to release button: no active or focused widget found"),
+      {}};
+  }
 
   auto &controller = mouseController();
-  controller.releaseButton(
-    QPoint(request.offset().x(), request.offset().y()), button);
+  controller.releaseButton(target, offset, button);
 
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }
@@ -118,10 +135,18 @@ MouseClickButtonCall::process(const Request &request) const {
       break;
   }
 
+  auto offset = QPoint(request.offset().x(), request.offset().y());
+  auto target = getTargetWidget(offset);
+  if (target) {
+    return {
+      grpc::Status(
+        grpc::StatusCode::INVALID_ARGUMENT,
+        "Failed to click button: no active or focused widget found"),
+      {}};
+  }
 
   auto &controller = mouseController();
-  controller.clickButton(
-    QPoint(request.offset().x(), request.offset().y()), button, double_click);
+  controller.clickButton(target, offset, button, double_click);
 
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }
@@ -143,8 +168,10 @@ std::unique_ptr<MouseMoveCursorCallData> MouseMoveCursorCall::clone() const {
 
 MouseMoveCursorCall::ProcessResult
 MouseMoveCursorCall::process(const Request &request) const {
+  auto offset = QPoint(request.offset().x(), request.offset().y());
+
   auto &controller = mouseController();
-  controller.moveCursor(QPoint(request.offset().x(), request.offset().y()));
+  controller.moveCursor(offset);
 
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }
@@ -166,8 +193,18 @@ std::unique_ptr<MouseScrollWheelCallData> MouseScrollWheelCall::clone() const {
 
 MouseScrollWheelCall::ProcessResult
 MouseScrollWheelCall::process(const Request &request) const {
+  auto delta = QPoint(request.delta_x(), request.delta_y());
+  auto target = getTargetWidget();
+  if (target) {
+    return {
+      grpc::Status(
+        grpc::StatusCode::INVALID_ARGUMENT,
+        "Failed to click button: no active or focused widget found"),
+      {}};
+  }
+
   auto &controller = mouseController();
-  controller.scrollWheel(QPoint(request.delta_x(), request.delta_y()));
+  controller.scrollWheel(target, delta);
 
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }
@@ -214,7 +251,7 @@ MouseClickOnObject::process(const Request &request) const {
                                   : resolvePosition(widget, request.offset());
 
   auto &controller = mouseController();
-  controller.clickOnObject(widget, pos, button, double_click);
+  controller.clickButton(widget, pos, button, double_click);
 
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }
@@ -247,7 +284,7 @@ MouseHoverOverObjectCall::process(const Request &request) const {
                                   : resolvePosition(widget, request.offset());
 
   auto &controller = mouseController();
-  controller.hoverOverObject(widget, pos);
+  controller.hover(widget, pos);
 
   return {grpc::Status::OK, google::protobuf::Empty{}};
 }

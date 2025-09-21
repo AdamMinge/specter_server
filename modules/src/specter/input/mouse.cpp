@@ -16,20 +16,20 @@ void MouseController::pressButton(
   QWidget *target, const QPoint &pos, Qt::MouseButton button,
   bool doubleClick) {
 
-  auto local_pos = target->mapFromGlobal(pos);
+  auto global_pos = target->mapToGlobal(pos);
   auto type =
     doubleClick ? QEvent::MouseButtonDblClick : QEvent::MouseButtonPress;
 
   auto press =
-    new QMouseEvent(type, local_pos, pos, button, button, Qt::NoModifier);
+    new QMouseEvent(type, pos, global_pos, button, button, Qt::NoModifier);
   QCoreApplication::postEvent(target, press);
 }
 
 void MouseController::releaseButton(
   QWidget *target, const QPoint &pos, Qt::MouseButton button) {
-  auto local_pos = target->mapFromGlobal(pos);
+  auto global_pos = target->mapToGlobal(pos);
   auto release = new QMouseEvent(
-    QEvent::MouseButtonRelease, local_pos, pos, button, Qt::NoButton,
+    QEvent::MouseButtonRelease, pos, global_pos, button, Qt::NoButton,
     Qt::NoModifier);
   QCoreApplication::postEvent(target, release);
 }

@@ -37,7 +37,7 @@ void MouseController::releaseButton(
 void MouseController::clickButton(
   QWidget *target, const QPoint &pos, Qt::MouseButton button,
   bool doubleClick) {
-  moveCursor(pos);
+  hover(target, pos);
   pressButton(target, pos, button, doubleClick);
   releaseButton(target, pos, button);
 }

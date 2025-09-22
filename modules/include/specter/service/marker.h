@@ -6,6 +6,7 @@
 #include <specter_proto/specter.pb.h>
 /* ----------------------------------- Local -------------------------------- */
 #include "specter/export.h"
+#include "specter/mark/marker.h"
 #include "specter/server/call.h"
 #include "specter/server/service.h"
 /* -------------------------------------------------------------------------- */
@@ -46,6 +47,31 @@ public:
   ProcessResult process(const Request &request) const override;
 
   std::unique_ptr<MarkerStartCallData> clone() const override;
+};
+
+/* ---------------------- MarkerListenSelectionChangesCall ----------------- */
+
+class MarkerObserverQueue;
+
+using MarkerListenSelectionChangesCallData = StreamCallData<
+  specter_proto::MarkerService::AsyncService, google::protobuf::Empty,
+  specter_proto::ObjectId>;
+
+class LIB_SPECTER_API MarkerListenSelectionChangesCall
+    : public MarkerListenSelectionChangesCallData {
+public:
+  explicit MarkerListenSelectionChangesCall(
+    specter_proto::MarkerService::AsyncService *service,
+    grpc::ServerCompletionQueue *queue);
+  ~MarkerListenSelectionChangesCall() override;
+
+  StartResult start(const Request &request) const override;
+  ProcessResult process() const override;
+
+  std::unique_ptr<MarkerListenSelectionChangesCallData> clone() const override;
+
+private:
+  std::unique_ptr<MarkerObserverQueue> m_observer_queue;
 };
 
 /* ------------------------------- MarkerService --------------------------- */

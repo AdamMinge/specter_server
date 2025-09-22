@@ -3,6 +3,7 @@
 
 #include "specter/mark/widget_marker.h"
 #include "specter/mark/widget_tooltip.h"
+#include "specter/module.h"
 /* ------------------------------------ Qt ---------------------------------- */
 #include <QApplication>
 #include <QMouseEvent>
@@ -78,10 +79,57 @@ void Marker::setMarkerColor(QColor color) { m_marker->setColor(color); }
 void Marker::onCurrentWidgetChanged(QWidget *widget) {
   m_tooltip->setWidget(widget);
   m_marker->setWidget(widget);
+
+  Q_EMIT currentWidgetChanged(widget);
 }
 
 void Marker::onMouseMoved(const QPoint &position) {
   m_tooltip->move(position + QPoint(10, 10));
+}
+
+/* ---------------------------- MarkerObserverQueue ----------------------- */
+
+MarkerObserverQueue::MarkerObserverQueue() {}
+
+MarkerObserverQueue::~MarkerObserverQueue() = default;
+
+void MarkerObserverQueue::setObserver(Marker *observer) {
+  if (m_observer) {
+    m_observer->disconnect(m_on_selection_changed);
+    m_observed_selection.clear();
+  }
+
+  m_observer = observer;
+
+  if (m_observer) {
+    m_on_selection_changed = QObject::connect(
+      m_observer, &Marker::currentWidgetChanged, [this](const auto widget) {
+        {
+          std::lock_guard<std::mutex> lock(m_mutex);
+          m_observed_selection.push_back(searcher().getId(widget));
+        }
+
+        m_cv.notify_one();
+      });
+  }
+}
+
+bool MarkerObserverQueue::isEmpty() const {
+  std::lock_guard<std::mutex> lock(m_mutex);
+  return m_observed_selection.empty();
+}
+
+ObjectId MarkerObserverQueue::popPreview() {
+  std::lock_guard<std::mutex> lock(m_mutex);
+  Q_ASSERT(!m_observed_selection.empty());
+  return m_observed_selection.takeFirst();
+}
+
+ObjectId MarkerObserverQueue::waitPopPreview() {
+  std::unique_lock<std::mutex> lock(m_mutex);
+  m_cv.wait(lock, [this] { return !m_observed_selection.empty(); });
+
+  return m_observed_selection.takeFirst();
 }
 
 }// namespace specter

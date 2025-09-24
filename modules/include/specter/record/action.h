@@ -7,7 +7,7 @@
 #include <variant>
 /* ----------------------------------- Local -------------------------------- */
 #include "specter/export.h"
-#include "specter/search/id.h"
+#include "specter/search/query.h"
 /* -------------------------------------------------------------------------- */
 
 namespace specter {
@@ -17,75 +17,75 @@ namespace specter {
 class LIB_SPECTER_API RecordedAction {
 public:
   struct ContextMenuOpened {
-    ObjectId object;
+    ObjectQuery object;
   };
 
   struct ButtonClicked {
-    ObjectId object;
+    ObjectQuery object;
   };
 
   struct ButtonToggled {
-    ObjectId object;
+    ObjectQuery object;
     bool checked;
   };
 
   struct ComboBoxCurrentChanged {
-    ObjectId object;
+    ObjectQuery object;
     int index;
   };
 
   struct SpinBoxValueChanged {
-    ObjectId object;
+    ObjectQuery object;
     int value;
   };
 
   struct DoubleSpinBoxValueChanged {
-    ObjectId object;
+    ObjectQuery object;
     double value;
   };
 
   struct SliderValueChanged {
-    ObjectId object;
+    ObjectQuery object;
     int value;
   };
 
   struct TabCurrentChanged {
-    ObjectId object;
+    ObjectQuery object;
     int index;
   };
 
   struct TabClosed {
-    ObjectId object;
+    ObjectQuery object;
     int index;
   };
 
   struct TabMoved {
-    ObjectId object;
+    ObjectQuery object;
     int from;
     int to;
   };
 
   struct ToolBoxCurrentChanged {
-    ObjectId object;
+    ObjectQuery object;
     int index;
   };
 
   struct ActionTriggered {
-    ObjectId object;
+    ObjectQuery object;
   };
 
   struct TextEditTextChanged {
-    ObjectId object;
+    ObjectQuery object;
     QString value;
   };
 
   struct LineEditTextChanged {
-    ObjectId object;
+    ObjectQuery object;
     QString value;
   };
 
   struct LineEditReturnPressed {
-    ObjectId object;
+    ObjectQuery object;
   };
 
 public:

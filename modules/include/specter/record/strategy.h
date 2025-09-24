@@ -7,7 +7,7 @@
 #include <QWidget>
 /* ----------------------------------- Local -------------------------------- */
 #include "specter/export.h"
-#include "specter/search/id.h"
+#include "specter/search/query.h"
 /* -------------------------------------------------------------------------- */
 
 namespace specter {
@@ -28,7 +28,7 @@ public:
 
   template<typename TYPE>
   [[nodiscard]] TYPE *getWidgetAs() const;
-  [[nodiscard]] ObjectId getWidgetAsId() const;
+  [[nodiscard]] ObjectQuery getWidgetAsQuery() const;
 
   [[nodiscard]] int getType() const;
 
@@ -58,7 +58,7 @@ TYPE *ActionRecordStrategy::getWidgetAs() const {
 
 template<typename TYPE, typename... ARGS>
 void ActionRecordStrategy::recordAction(ARGS &&...args) {
-  Q_EMIT actionRecorded(TYPE{getWidgetAsId(), std::forward<ARGS>(args)...});
+  Q_EMIT actionRecorded(TYPE{getWidgetAsQuery(), std::forward<ARGS>(args)...});
 }
 
 /* ------------------------- ActionRecordWidgetStrategy --------------------- */

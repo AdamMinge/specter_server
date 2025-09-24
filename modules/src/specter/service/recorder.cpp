@@ -19,7 +19,8 @@ public:
   operator()(const RecordedAction::ContextMenuOpened &action) const {
     auto cmd = specter_proto::RecorderCommand{};
     auto ev = cmd.mutable_context_menu_opened();
-    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->mutable_object_query()->set_query(
+      action.object.toString().toStdString());
     return cmd;
   }
 
@@ -27,7 +28,8 @@ public:
   operator()(const RecordedAction::ButtonClicked &action) const {
     auto cmd = specter_proto::RecorderCommand{};
     auto ev = cmd.mutable_button_clicked();
-    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->mutable_object_query()->set_query(
+      action.object.toString().toStdString());
     return cmd;
   }
 
@@ -35,7 +37,8 @@ public:
   operator()(const RecordedAction::ButtonToggled &action) const {
     auto cmd = specter_proto::RecorderCommand{};
     auto ev = cmd.mutable_button_toggled();
-    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->mutable_object_query()->set_query(
+      action.object.toString().toStdString());
     ev->set_checked(action.checked);
     return cmd;
   }
@@ -44,7 +47,8 @@ public:
   operator()(const RecordedAction::ComboBoxCurrentChanged &action) const {
     auto cmd = specter_proto::RecorderCommand{};
     auto ev = cmd.mutable_combo_box_current_changed();
-    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->mutable_object_query()->set_query(
+      action.object.toString().toStdString());
     ev->set_index(action.index);
     return cmd;
   }
@@ -53,7 +57,8 @@ public:
   operator()(const RecordedAction::SpinBoxValueChanged &action) const {
     auto cmd = specter_proto::RecorderCommand{};
     auto ev = cmd.mutable_spin_box_value_changed();
-    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->mutable_object_query()->set_query(
+      action.object.toString().toStdString());
     ev->set_value(action.value);
     return cmd;
   }
@@ -62,7 +67,8 @@ public:
   operator()(const RecordedAction::DoubleSpinBoxValueChanged &action) const {
     auto cmd = specter_proto::RecorderCommand{};
     auto ev = cmd.mutable_double_spin_box_value_changed();
-    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->mutable_object_query()->set_query(
+      action.object.toString().toStdString());
     ev->set_value(action.value);
     return cmd;
   }
@@ -71,7 +77,8 @@ public:
   operator()(const RecordedAction::SliderValueChanged &action) const {
     auto cmd = specter_proto::RecorderCommand{};
     auto ev = cmd.mutable_slider_value_changed();
-    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->mutable_object_query()->set_query(
+      action.object.toString().toStdString());
     ev->set_value(action.value);
     return cmd;
   }
@@ -80,7 +87,8 @@ public:
   operator()(const RecordedAction::TabCurrentChanged &action) const {
     auto cmd = specter_proto::RecorderCommand{};
     auto ev = cmd.mutable_tab_current_changed();
-    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->mutable_object_query()->set_query(
+      action.object.toString().toStdString());
     ev->set_index(action.index);
     return cmd;
   }
@@ -89,7 +97,8 @@ public:
   operator()(const RecordedAction::TabClosed &action) const {
     auto cmd = specter_proto::RecorderCommand{};
     auto ev = cmd.mutable_tab_closed();
-    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->mutable_object_query()->set_query(
+      action.object.toString().toStdString());
     ev->set_index(action.index);
     return cmd;
   }
@@ -98,7 +107,8 @@ public:
   operator()(const RecordedAction::TabMoved &action) const {
     auto cmd = specter_proto::RecorderCommand{};
     auto ev = cmd.mutable_tab_moved();
-    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->mutable_object_query()->set_query(
+      action.object.toString().toStdString());
     ev->set_from(action.from);
     ev->set_to(action.to);
     return cmd;
@@ -108,7 +118,8 @@ public:
   operator()(const RecordedAction::ToolBoxCurrentChanged &action) const {
     auto cmd = specter_proto::RecorderCommand{};
     auto ev = cmd.mutable_tool_box_current_changed();
-    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->mutable_object_query()->set_query(
+      action.object.toString().toStdString());
     ev->set_index(action.index);
     return cmd;
   }
@@ -117,7 +128,8 @@ public:
   operator()(const RecordedAction::ActionTriggered &action) const {
     auto cmd = specter_proto::RecorderCommand{};
     auto ev = cmd.mutable_action_triggered();
-    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->mutable_object_query()->set_query(
+      action.object.toString().toStdString());
     return cmd;
   }
 
@@ -125,7 +137,8 @@ public:
   operator()(const RecordedAction::TextEditTextChanged &action) const {
     auto cmd = specter_proto::RecorderCommand{};
     auto ev = cmd.mutable_text_edit_text_changed();
-    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->mutable_object_query()->set_query(
+      action.object.toString().toStdString());
     ev->set_value(action.value.toStdString());
     return cmd;
   }
@@ -134,7 +147,8 @@ public:
   operator()(const RecordedAction::LineEditTextChanged &action) const {
     auto cmd = specter_proto::RecorderCommand{};
     auto ev = cmd.mutable_line_edit_text_changed();
-    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->mutable_object_query()->set_query(
+      action.object.toString().toStdString());
     ev->set_value(action.value.toStdString());
     return cmd;
   }
@@ -143,7 +157,8 @@ public:
   operator()(const RecordedAction::LineEditReturnPressed &action) const {
     auto cmd = specter_proto::RecorderCommand{};
     auto ev = cmd.mutable_line_edit_return_pressed();
-    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->mutable_object_query()->set_query(
+      action.object.toString().toStdString());
     return cmd;
   }
 };

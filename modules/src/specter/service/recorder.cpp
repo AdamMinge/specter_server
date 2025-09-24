@@ -17,150 +17,134 @@ class RecordedActionsMapper {
 public:
   specter_proto::RecorderCommand
   operator()(const RecordedAction::ContextMenuOpened &action) const {
-    auto response = specter_proto::RecorderCommand{};
-    response.set_command(
-      QLatin1String{"ContextMenuOpened %1"}
-        .arg(action.object.toString())
-        .toStdString());
-    return response;
+    auto cmd = specter_proto::RecorderCommand{};
+    auto ev = cmd.mutable_context_menu_opened();
+    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    return cmd;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::ButtonClicked &action) const {
-    auto response = specter_proto::RecorderCommand{};
-    response.set_command(
-      QLatin1String{"ButtonClicked %1"}
-        .arg(action.object.toString())
-        .toStdString());
-    return response;
+    auto cmd = specter_proto::RecorderCommand{};
+    auto ev = cmd.mutable_button_clicked();
+    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    return cmd;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::ButtonToggled &action) const {
-    auto response = specter_proto::RecorderCommand{};
-    response.set_command(
-      QLatin1String{"ButtonToggled %1"}
-        .arg(action.object.toString())
-        .toStdString());
-    return response;
+    auto cmd = specter_proto::RecorderCommand{};
+    auto ev = cmd.mutable_button_toggled();
+    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->set_checked(action.checked);
+    return cmd;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::ComboBoxCurrentChanged &action) const {
-    auto response = specter_proto::RecorderCommand{};
-    response.set_command(
-      QLatin1String{"ComboBoxCurrentChanged %1"}
-        .arg(action.object.toString())
-        .toStdString());
-    return response;
+    auto cmd = specter_proto::RecorderCommand{};
+    auto ev = cmd.mutable_combo_box_current_changed();
+    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->set_index(action.index);
+    return cmd;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::SpinBoxValueChanged &action) const {
-    auto response = specter_proto::RecorderCommand{};
-    response.set_command(
-      QLatin1String{"SpinBoxValueChanged %1"}
-        .arg(action.object.toString())
-        .toStdString());
-    return response;
+    auto cmd = specter_proto::RecorderCommand{};
+    auto ev = cmd.mutable_spin_box_value_changed();
+    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->set_value(action.value);
+    return cmd;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::DoubleSpinBoxValueChanged &action) const {
-    auto response = specter_proto::RecorderCommand{};
-    response.set_command(
-      QLatin1String{"DoubleSpinBoxValueChanged %1"}
-        .arg(action.object.toString())
-        .toStdString());
-    return response;
+    auto cmd = specter_proto::RecorderCommand{};
+    auto ev = cmd.mutable_double_spin_box_value_changed();
+    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->set_value(action.value);
+    return cmd;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::SliderValueChanged &action) const {
-    auto response = specter_proto::RecorderCommand{};
-    response.set_command(
-      QLatin1String{"SliderValueChanged %1"}
-        .arg(action.object.toString())
-        .toStdString());
-    return response;
+    auto cmd = specter_proto::RecorderCommand{};
+    auto ev = cmd.mutable_slider_value_changed();
+    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->set_value(action.value);
+    return cmd;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::TabCurrentChanged &action) const {
-    auto response = specter_proto::RecorderCommand{};
-    response.set_command(
-      QLatin1String{"TabCurrentChanged %1"}
-        .arg(action.object.toString())
-        .toStdString());
-    return response;
+    auto cmd = specter_proto::RecorderCommand{};
+    auto ev = cmd.mutable_tab_current_changed();
+    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->set_index(action.index);
+    return cmd;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::TabClosed &action) const {
-    auto response = specter_proto::RecorderCommand{};
-    response.set_command(
-      QLatin1String{"TabClosed %1"}
-        .arg(action.object.toString())
-        .toStdString());
-    return response;
+    auto cmd = specter_proto::RecorderCommand{};
+    auto ev = cmd.mutable_tab_closed();
+    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->set_index(action.index);
+    return cmd;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::TabMoved &action) const {
-    auto response = specter_proto::RecorderCommand{};
-    response.set_command(
-      QLatin1String{"TabMoved %1"}.arg(action.object.toString()).toStdString());
-    return response;
+    auto cmd = specter_proto::RecorderCommand{};
+    auto ev = cmd.mutable_tab_moved();
+    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->set_from(action.from);
+    ev->set_to(action.to);
+    return cmd;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::ToolBoxCurrentChanged &action) const {
-    auto response = specter_proto::RecorderCommand{};
-    response.set_command(
-      QLatin1String{"ToolBoxCurrentChanged %1"}
-        .arg(action.object.toString())
-        .toStdString());
-    return response;
+    auto cmd = specter_proto::RecorderCommand{};
+    auto ev = cmd.mutable_tool_box_current_changed();
+    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->set_index(action.index);
+    return cmd;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::ActionTriggered &action) const {
-    auto response = specter_proto::RecorderCommand{};
-    response.set_command(
-      QLatin1String{"ActionTriggered %1"}
-        .arg(action.object.toString())
-        .toStdString());
-    return response;
+    auto cmd = specter_proto::RecorderCommand{};
+    auto ev = cmd.mutable_action_triggered();
+    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    return cmd;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::TextEditTextChanged &action) const {
-    auto response = specter_proto::RecorderCommand{};
-    response.set_command(
-      QLatin1String{"TextEditTextChanged %1"}
-        .arg(action.object.toString())
-        .toStdString());
-    return response;
+    auto cmd = specter_proto::RecorderCommand{};
+    auto ev = cmd.mutable_text_edit_text_changed();
+    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->set_value(action.value.toStdString());
+    return cmd;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::LineEditTextChanged &action) const {
-    auto response = specter_proto::RecorderCommand{};
-    response.set_command(
-      QLatin1String{"LineEditTextChanged %1"}
-        .arg(action.object.toString())
-        .toStdString());
-    return response;
+    auto cmd = specter_proto::RecorderCommand{};
+    auto ev = cmd.mutable_line_edit_text_changed();
+    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    ev->set_value(action.value.toStdString());
+    return cmd;
   }
 
   specter_proto::RecorderCommand
   operator()(const RecordedAction::LineEditReturnPressed &action) const {
-    auto response = specter_proto::RecorderCommand{};
-    response.set_command(
-      QLatin1String{"LineEditReturnPressed %1"}
-        .arg(action.object.toString())
-        .toStdString());
-    return response;
+    auto cmd = specter_proto::RecorderCommand{};
+    auto ev = cmd.mutable_line_edit_return_pressed();
+    ev->mutable_object()->set_id(action.object.toString().toStdString());
+    return cmd;
   }
 };
 

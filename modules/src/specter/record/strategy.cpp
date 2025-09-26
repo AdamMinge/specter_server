@@ -66,8 +66,13 @@ void ActionRecordStrategy::setWidget(QWidget *widget) {
 QWidget *ActionRecordStrategy::getWidget() const { return m_widget; }
 
 ObjectQuery ActionRecordStrategy::getWidgetAsQuery() const {
-  const auto object = searcher().getQuery(getWidget());
-  return object;
+  const auto query = searcher().getQuery(getWidget());
+  return query;
+}
+
+ObjectId ActionRecordStrategy::getWidgetAsId() const {
+  const auto id = searcher().getId(getWidget());
+  return id;
 }
 
 int ActionRecordStrategy::getType() const { return m_type; }

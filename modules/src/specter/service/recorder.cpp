@@ -21,6 +21,7 @@ public:
     auto ev = cmd.mutable_context_menu_opened();
     ev->mutable_object_query()->set_query(
       action.object.toString().toStdString());
+    ev->mutable_object_id()->set_id(action.id.toString().toStdString());
     return cmd;
   }
 
@@ -30,6 +31,7 @@ public:
     auto ev = cmd.mutable_button_clicked();
     ev->mutable_object_query()->set_query(
       action.object.toString().toStdString());
+    ev->mutable_object_id()->set_id(action.id.toString().toStdString());
     return cmd;
   }
 
@@ -39,6 +41,7 @@ public:
     auto ev = cmd.mutable_button_toggled();
     ev->mutable_object_query()->set_query(
       action.object.toString().toStdString());
+    ev->mutable_object_id()->set_id(action.id.toString().toStdString());
     ev->set_checked(action.checked);
     return cmd;
   }
@@ -49,6 +52,7 @@ public:
     auto ev = cmd.mutable_combo_box_current_changed();
     ev->mutable_object_query()->set_query(
       action.object.toString().toStdString());
+    ev->mutable_object_id()->set_id(action.id.toString().toStdString());
     ev->set_index(action.index);
     return cmd;
   }
@@ -59,6 +63,7 @@ public:
     auto ev = cmd.mutable_spin_box_value_changed();
     ev->mutable_object_query()->set_query(
       action.object.toString().toStdString());
+    ev->mutable_object_id()->set_id(action.id.toString().toStdString());
     ev->set_value(action.value);
     return cmd;
   }
@@ -69,6 +74,7 @@ public:
     auto ev = cmd.mutable_double_spin_box_value_changed();
     ev->mutable_object_query()->set_query(
       action.object.toString().toStdString());
+    ev->mutable_object_id()->set_id(action.id.toString().toStdString());
     ev->set_value(action.value);
     return cmd;
   }
@@ -79,6 +85,7 @@ public:
     auto ev = cmd.mutable_slider_value_changed();
     ev->mutable_object_query()->set_query(
       action.object.toString().toStdString());
+    ev->mutable_object_id()->set_id(action.id.toString().toStdString());
     ev->set_value(action.value);
     return cmd;
   }
@@ -89,6 +96,7 @@ public:
     auto ev = cmd.mutable_tab_current_changed();
     ev->mutable_object_query()->set_query(
       action.object.toString().toStdString());
+    ev->mutable_object_id()->set_id(action.id.toString().toStdString());
     ev->set_index(action.index);
     return cmd;
   }
@@ -99,6 +107,7 @@ public:
     auto ev = cmd.mutable_tab_closed();
     ev->mutable_object_query()->set_query(
       action.object.toString().toStdString());
+    ev->mutable_object_id()->set_id(action.id.toString().toStdString());
     ev->set_index(action.index);
     return cmd;
   }
@@ -109,6 +118,7 @@ public:
     auto ev = cmd.mutable_tab_moved();
     ev->mutable_object_query()->set_query(
       action.object.toString().toStdString());
+    ev->mutable_object_id()->set_id(action.id.toString().toStdString());
     ev->set_from(action.from);
     ev->set_to(action.to);
     return cmd;
@@ -120,6 +130,7 @@ public:
     auto ev = cmd.mutable_tool_box_current_changed();
     ev->mutable_object_query()->set_query(
       action.object.toString().toStdString());
+    ev->mutable_object_id()->set_id(action.id.toString().toStdString());
     ev->set_index(action.index);
     return cmd;
   }
@@ -130,6 +141,7 @@ public:
     auto ev = cmd.mutable_action_triggered();
     ev->mutable_object_query()->set_query(
       action.object.toString().toStdString());
+    ev->mutable_object_id()->set_id(action.id.toString().toStdString());
     return cmd;
   }
 
@@ -139,6 +151,7 @@ public:
     auto ev = cmd.mutable_text_edit_text_changed();
     ev->mutable_object_query()->set_query(
       action.object.toString().toStdString());
+    ev->mutable_object_id()->set_id(action.id.toString().toStdString());
     ev->set_value(action.value.toStdString());
     return cmd;
   }
@@ -149,6 +162,7 @@ public:
     auto ev = cmd.mutable_line_edit_text_changed();
     ev->mutable_object_query()->set_query(
       action.object.toString().toStdString());
+    ev->mutable_object_id()->set_id(action.id.toString().toStdString());
     ev->set_value(action.value.toStdString());
     return cmd;
   }
@@ -159,6 +173,7 @@ public:
     auto ev = cmd.mutable_line_edit_return_pressed();
     ev->mutable_object_query()->set_query(
       action.object.toString().toStdString());
+    ev->mutable_object_id()->set_id(action.id.toString().toStdString());
     return cmd;
   }
 };

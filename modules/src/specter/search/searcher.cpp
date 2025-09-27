@@ -36,7 +36,7 @@ QObject *Searcher::getObject(const ObjectId &id) const {
 
     if (id == getId(object)) return object;
 
-    for (const auto child : object->children()) { objects.push(child); }
+    for (const auto &child : object->children()) { objects.push(child); }
   }
 
   return nullptr;
@@ -77,7 +77,7 @@ Searcher::findObjects(const ObjectQuery &query, qsizetype limit) const {
   }
 
   auto found_objects = QList<QObject *>{};
-  while (!objects.empty() && found_objects.size() <= limit) {
+  while (!objects.empty() && found_objects.size() < limit) {
     auto object = objects.front();
     objects.pop();
 
@@ -89,7 +89,7 @@ Searcher::findObjects(const ObjectQuery &query, qsizetype limit) const {
 
     if (matches_query) { found_objects.push_back(object); }
 
-    for (const auto child : object->children()) { objects.push(child); }
+    for (const auto &child : object->children()) { objects.push(child); }
   }
 
   return found_objects;

@@ -12,7 +12,7 @@ namespace specter {
 ObjectId::ObjectId() : ObjectId(nullptr) {}
 
 ObjectId::ObjectId(const QObject *data)
-    : m_data(reinterpret_cast<quint64>(data)) {}
+    : m_data(reinterpret_cast<qulonglong>(data)) {}
 
 ObjectId::~ObjectId() = default;
 

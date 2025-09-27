@@ -31,7 +31,7 @@ protected:
   explicit ObjectId(const QObject *object);
 
 private:
-  quint64 m_data;
+  qulonglong m_data;
 };
 
 }// namespace specter

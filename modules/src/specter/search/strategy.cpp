@@ -42,13 +42,15 @@ namespace specter {
 
 /* ------------------------------ SearchStrategy ---------------------------- */
 
-SearchStrategy::SearchStrategy() = default;
+SearchStrategy::SearchStrategy(Kind kind) : m_kind(kind) {}
 
 SearchStrategy::~SearchStrategy() = default;
 
+SearchStrategy::Kind SearchStrategy::kind() const { return m_kind; }
+
 /* -------------------------------- TypeSearch ------------------------------ */
 
-TypeSearch::TypeSearch() = default;
+TypeSearch::TypeSearch() : SearchStrategy(Kind::Type) {}
 
 TypeSearch::~TypeSearch() = default;
 
@@ -70,7 +72,7 @@ QVariantMap TypeSearch::createObjectQuery(const QObject *object) const {
 
 /* ----------------------------- PropertiesSearch --------------------------- */
 
-PropertiesSearch::PropertiesSearch() = default;
+PropertiesSearch::PropertiesSearch() : SearchStrategy(Kind::Properties) {}
 
 PropertiesSearch::~PropertiesSearch() = default;
 
@@ -158,7 +160,7 @@ QMap<int, QSet<QString>> PropertiesSearch::getTypeToProperties() {
 
 /* -------------------------------- PathSearch ------------------------------ */
 
-PathSearch::PathSearch() = default;
+PathSearch::PathSearch() : SearchStrategy(Kind::Path) {}
 
 PathSearch::~PathSearch() = default;
 
@@ -197,7 +199,7 @@ QString PathSearch::getPath(const QObject *object) const {
 
 /* ----------------------------- OrderIndexSearch --------------------------- */
 
-OrderIndexSearch::OrderIndexSearch() = default;
+OrderIndexSearch::OrderIndexSearch() : SearchStrategy(Kind::OrderIndex) {}
 
 OrderIndexSearch::~OrderIndexSearch() = default;
 

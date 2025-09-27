@@ -14,13 +14,21 @@ namespace specter {
 
 class LIB_SPECTER_API SearchStrategy {
 public:
-  explicit SearchStrategy();
+  enum class Kind { Type, Properties, Path, OrderIndex };
+
+public:
+  explicit SearchStrategy(Kind kind);
   virtual ~SearchStrategy();
+
+  [[nodiscard]] Kind kind() const;
 
   [[nodiscard]] virtual bool
   matchesObjectQuery(const QObject *object, const QVariantMap &query) const = 0;
   [[nodiscard]] virtual QVariantMap
   createObjectQuery(const QObject *object) const = 0;
+
+private:
+  Kind m_kind;
 };
 
 /* -------------------------------- TypeSearch ------------------------------ */

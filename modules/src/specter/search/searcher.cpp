@@ -1,7 +1,6 @@
 /* ----------------------------------- Local -------------------------------- */
 #include "specter/search/searcher.h"
 
-#include "specter/search/strategy.h"
 #include "specter/search/utils.h"
 /* ------------------------------------ Qt ---------------------------------- */
 #include <QApplication>
@@ -48,15 +47,35 @@ QList<QObject *> Searcher::getObjects(const ObjectQuery &query) const {
 }
 
 ObjectQuery Searcher::getQuery(const QObject *object) const {
+  return getQueryFiltered(object, {});
+}
+
+ObjectQuery Searcher::getQueryUsingKinds(
+  const QObject *object, const QSet<SearchStrategy::Kind> &kinds) const {
   if (!object) return ObjectQuery{};
 
   auto query = QVariantMap{};
   for (const auto &search_strategy : m_strategies) {
-    const auto sub_query = search_strategy->createObjectQuery(object);
-    query.insert(sub_query);
+    if (kinds.contains(search_strategy->kind())) {
+      const auto sub_query = search_strategy->createObjectQuery(object);
+      query.insert(sub_query);
+    }
   }
 
   return ObjectQuery(query);
+}
+
+ObjectQuery Searcher::getQueryFiltered(
+  const QObject *object, const QSet<SearchStrategy::Kind> &excludeKinds) const {
+
+  QSet<SearchStrategy::Kind> kinds;
+  for (const auto &search_strategy : m_strategies) {
+    if (!excludeKinds.contains(search_strategy->kind())) {
+      kinds.insert(search_strategy->kind());
+    }
+  }
+
+  return getQueryUsingKinds(object, kinds);
 }
 
 ObjectId Searcher::getId(const QObject *object) const {

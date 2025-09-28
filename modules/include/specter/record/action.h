@@ -87,6 +87,11 @@ public:
     ObjectId id;
   };
 
+  struct ActionHovered {
+    ObjectQuery object;
+    ObjectId id;
+  };
+
   struct TextEditTextChanged {
     ObjectQuery object;
     ObjectId id;
@@ -100,6 +105,21 @@ public:
   };
 
   struct LineEditReturnPressed {
+    ObjectQuery object;
+    ObjectId id;
+  };
+
+  struct WindowClosed {
+    ObjectQuery object;
+    ObjectId id;
+  };
+
+  struct WindowMinimized {
+    ObjectQuery object;
+    ObjectId id;
+  };
+
+  struct WindowMaximized {
     ObjectQuery object;
     ObjectId id;
   };
@@ -124,8 +144,8 @@ private:
     ContextMenuOpened, ButtonClicked, ButtonToggled, ComboBoxCurrentChanged,
     SpinBoxValueChanged, DoubleSpinBoxValueChanged, SliderValueChanged,
     TabCurrentChanged, TabClosed, TabMoved, ToolBoxCurrentChanged,
-    ActionTriggered, TextEditTextChanged, LineEditTextChanged,
-    LineEditReturnPressed>
+    ActionTriggered, ActionHovered, TextEditTextChanged, LineEditTextChanged,
+    LineEditReturnPressed, WindowClosed, WindowMinimized, WindowMaximized>
     m_data;
 };
 

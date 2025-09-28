@@ -65,15 +65,14 @@ void ActionRecordStrategy::setWidget(QWidget *widget) {
 
 QWidget *ActionRecordStrategy::getWidget() const { return m_widget; }
 
-ObjectQuery ActionRecordStrategy::getWidgetAsQuery() const {
+ObjectQuery ActionRecordStrategy::getObjectAsQuery(QObject *object) const {
   const auto query = searcher().getQueryUsingKinds(
-    getWidget(),
-    {SearchStrategy::Kind::OrderIndex, SearchStrategy::Kind::Path});
+    object, {SearchStrategy::Kind::OrderIndex, SearchStrategy::Kind::Path});
   return query;
 }
 
-ObjectId ActionRecordStrategy::getWidgetAsId() const {
-  const auto id = searcher().getId(getWidget());
+ObjectId ActionRecordStrategy::getObjectAsId(QObject *object) const {
+  const auto id = searcher().getId(object);
   return id;
 }
 
@@ -104,6 +103,14 @@ bool ActionRecordWidgetStrategy::eventFilter(QObject *obj, QEvent *event) {
       case QEvent::ContextMenu:
         onOpenContextMenu();
         break;
+      case QEvent::Close:
+        onClosed();
+        break;
+      case QEvent::WindowStateChange: {
+        auto stateEvent = static_cast<QWindowStateChangeEvent *>(event);
+        onWindowStateChanged(widget->windowState());
+        break;
+      }
     }
   }
 
@@ -114,6 +121,19 @@ void ActionRecordWidgetStrategy::onOpenContextMenu() {
   recordAction<RecordedAction::ContextMenuOpened>();
 }
 
+void ActionRecordWidgetStrategy::onClosed() {
+  recordAction<RecordedAction::WindowClosed>();
+}
+
+void ActionRecordWidgetStrategy::onWindowStateChanged(
+  Qt::WindowStates newState) {
+  if (newState == Qt::WindowMinimized) {
+    recordAction<RecordedAction::WindowMinimized>();
+  } else if (newState == Qt::WindowMaximized) {
+    recordAction<RecordedAction::WindowMaximized>();
+  }
+}
+
 /* ------------------------- ActionRecordButtonStrategy --------------------- */
 
 ActionRecordButtonStrategy::ActionRecordButtonStrategy(QObject *parent)
@@ -121,13 +141,43 @@ ActionRecordButtonStrategy::ActionRecordButtonStrategy(QObject *parent)
 
 ActionRecordButtonStrategy::~ActionRecordButtonStrategy() = default;
 
-void ActionRecordButtonStrategy::installConnections(QWidget *widget) {
-  auto button = qobject_cast<QAbstractButton *>(widget);
-  Q_ASSERT(button);
+bool ActionRecordButtonStrategy::eventFilter(QObject *obj, QEvent *event) {
+  const auto tryPress = [this](auto button) {
+    if (!button) return;
 
-  connect(
-    button, &QAbstractButton::clicked, this,
-    &ActionRecordButtonStrategy::onPressed);
+    const auto is_disabled = !button->isEnabled();
+    if (is_disabled) return;
+
+    onPressed();
+  };
+
+  if (auto button = getWidgetAs<QAbstractButton>(); button == obj) {
+    switch (event->type()) {
+      case QEvent::MouseButtonRelease: {
+        const auto mouse_event = static_cast<QMouseEvent *>(event);
+        const auto mouse_position = mouse_event->position().toPoint();
+        const auto button_rect = button->rect();
+        if (!button_rect.contains(mouse_position)) break;
+
+        tryPress(button);
+        break;
+      }
+
+      case QEvent::KeyPress: {
+        const auto key_event = static_cast<QKeyEvent *>(event);
+        if (
+          key_event->key() == Qt::Key_Space ||
+          key_event->key() == Qt::Key_Return ||
+          key_event->key() == Qt::Key_Enter) {
+          tryPress(button);
+        }
+
+        break;
+      }
+    }
+  }
+
+  return ActionRecordWidgetStrategy::eventFilter(obj, event);
 }
 
 void ActionRecordButtonStrategy::onPressed() {
@@ -309,47 +359,70 @@ ActionRecordMenuStrategy::ActionRecordMenuStrategy(QObject *parent)
 
 ActionRecordMenuStrategy::~ActionRecordMenuStrategy() = default;
 
-bool ActionRecordMenuStrategy::eventFilter(QObject *obj, QEvent *event) {
-  const auto tryTrigger = [this](auto menu, auto action) {
-    if (!action) return;
+void ActionRecordMenuStrategy::installConnections(QWidget *widget) {
+  auto menu = qobject_cast<QMenu *>(widget);
+  Q_ASSERT(menu);
 
-    const auto is_disabled = !action->isEnabled();
-    const auto is_submenu = action->menu();
-    const auto is_inactive = action != menu->activeAction();
-    if (is_disabled || is_submenu || is_inactive) return;
+  connect(
+    menu, &QMenu::triggered, this, &ActionRecordMenuStrategy::onTriggered);
 
-    onTriggered(action);
-  };
+  connect(menu, &QMenu::hovered, this, &ActionRecordMenuStrategy::onHovered);
 
-  if (auto menu = getWidgetAs<QMenu>(); menu == obj) {
-    switch (event->type()) {
-      case QEvent::KeyPress: {
-        const auto key_event = static_cast<QKeyEvent *>(event);
-        const auto key = key_event->key();
-
-        if (key == Qt::Key_Enter || key == Qt::Key_Return) {
-          const auto action = menu->activeAction();
-          tryTrigger(menu, action);
-        }
-
-        break;
-      }
-      case QEvent::MouseButtonRelease: {
-        const auto mouse_event = static_cast<QMouseEvent *>(event);
-        const auto mouse_position = mouse_event->position().toPoint();
-        const auto action = menu->actionAt(mouse_position);
-
-        tryTrigger(menu, action);
-
-        break;
-      }
-    }
-  }
-
-  return ActionRecordStrategy::eventFilter(obj, event);
+  connect(
+    menu, &QMenu::aboutToHide, this, [this]() { m_lastHovered = nullptr; });
 }
 
-void ActionRecordMenuStrategy::onTriggered(QAction *action) { /* TODO */ }
+void ActionRecordMenuStrategy::onTriggered(QAction *action) {
+  if (!action || !action->isEnabled()) return;
+  if (action->menu()) return;
+
+  recordAction<RecordedAction::ActionTriggered>(action);
+}
+
+void ActionRecordMenuStrategy::onHovered(QAction *action) {
+  if (!action || !action->isEnabled()) return;
+
+  if (action == m_lastHovered) return;
+  m_lastHovered = action;
+
+  recordAction<RecordedAction::ActionHovered>(action);
+}
+
+/* ------------------------- ActionRecordMenuBarStrategy -------------------- */
+
+ActionRecordMenuBarStrategy::ActionRecordMenuBarStrategy(QObject *parent)
+    : ActionRecordStrategy(qMetaTypeId<QMenuBar>(), parent) {}
+
+ActionRecordMenuBarStrategy::~ActionRecordMenuBarStrategy() = default;
+
+void ActionRecordMenuBarStrategy::installConnections(QWidget *widget) {
+  auto menubar = qobject_cast<QMenuBar *>(widget);
+  Q_ASSERT(menubar);
+
+  connect(
+    menubar, &QMenuBar::triggered, this,
+    &ActionRecordMenuBarStrategy::onTriggered);
+
+  connect(
+    menubar, &QMenuBar::hovered, this, &ActionRecordMenuBarStrategy::onHovered);
+
+  connect(
+    menubar, &QMenu::destroyed, this, [this]() { m_lastHovered = nullptr; });
+}
+
+void ActionRecordMenuBarStrategy::onTriggered(QAction *action) {
+  if (!action || !action->isEnabled()) return;
+  recordAction<RecordedAction::ActionTriggered>(action);
+}
+
+void ActionRecordMenuBarStrategy::onHovered(QAction *action) {
+  if (!action || !action->isEnabled()) return;
+
+  if (action == m_lastHovered) return;
+  m_lastHovered = action;
+
+  recordAction<RecordedAction::ActionHovered>(action);
+}
 
 /* ------------------------ ActionRecordTextEditStrategy -------------------- */
 
@@ -431,14 +504,6 @@ void ActionRecordItemViewStrategy::installConnections(QWidget *widget) {
       model, &QAbstractItemModel::dataChanged, this,
       &ActionRecordItemViewStrategy::onDataChanged);
   }
-}
-
-void ActionRecordItemViewStrategy::removeConnections(QWidget *widget) {
-  auto itemview = qobject_cast<QAbstractItemView *>(widget);
-  Q_ASSERT(itemview);
-
-  auto model = itemview->model();
-  if (model) { model->disconnect(this); }
 }
 
 void ActionRecordItemViewStrategy::onDataChanged(

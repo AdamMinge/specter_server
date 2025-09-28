@@ -146,6 +146,16 @@ public:
   }
 
   specter_proto::RecorderCommand
+  operator()(const RecordedAction::ActionHovered &action) const {
+    auto cmd = specter_proto::RecorderCommand{};
+    auto ev = cmd.mutable_action_hovered();
+    ev->mutable_object_query()->set_query(
+      action.object.toString().toStdString());
+    ev->mutable_object_id()->set_id(action.id.toString().toStdString());
+    return cmd;
+  }
+
+  specter_proto::RecorderCommand
   operator()(const RecordedAction::TextEditTextChanged &action) const {
     auto cmd = specter_proto::RecorderCommand{};
     auto ev = cmd.mutable_text_edit_text_changed();
@@ -176,6 +186,36 @@ public:
     ev->mutable_object_id()->set_id(action.id.toString().toStdString());
     return cmd;
   }
+
+  specter_proto::RecorderCommand
+  operator()(const RecordedAction::WindowClosed &action) const {
+    auto cmd = specter_proto::RecorderCommand{};
+    auto ev = cmd.mutable_window_closed();
+    ev->mutable_object_query()->set_query(
+      action.object.toString().toStdString());
+    ev->mutable_object_id()->set_id(action.id.toString().toStdString());
+    return cmd;
+  }
+
+  specter_proto::RecorderCommand
+  operator()(const RecordedAction::WindowMinimized &action) const {
+    auto cmd = specter_proto::RecorderCommand{};
+    auto ev = cmd.mutable_window_minimized();
+    ev->mutable_object_query()->set_query(
+      action.object.toString().toStdString());
+    ev->mutable_object_id()->set_id(action.id.toString().toStdString());
+    return cmd;
+  }
+
+  specter_proto::RecorderCommand
+  operator()(const RecordedAction::WindowMaximized &action) const {
+    auto cmd = specter_proto::RecorderCommand{};
+    auto ev = cmd.mutable_window_maximized();
+    ev->mutable_object_query()->set_query(
+      action.object.toString().toStdString());
+    ev->mutable_object_id()->set_id(action.id.toString().toStdString());
+    return cmd;
+  }
 };
 
 /* ----------------------------- RecorderListenCommandsCall ------------------------ */
@@ -197,6 +237,7 @@ RecorderListenCommandsCall::RecorderListenCommandsCall(
   m_recorder->addStrategy(new ActionRecordTabBarStrategy());
   m_recorder->addStrategy(new ActionRecordToolBoxStrategy());
   m_recorder->addStrategy(new ActionRecordMenuStrategy());
+  m_recorder->addStrategy(new ActionRecordMenuBarStrategy());
   m_recorder->addStrategy(new ActionRecordTextEditStrategy());
   m_recorder->addStrategy(new ActionRecordLineEditStrategy());
   m_recorder->addStrategy(new ActionRecordItemViewStrategy());

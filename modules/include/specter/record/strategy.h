@@ -15,6 +15,10 @@ namespace specter {
 
 class RecordedAction;
 
+template<typename T>
+concept QObjectPtrConcept =
+  std::is_base_of_v<QObject, std::remove_pointer_t<T>>;
+
 /* ---------------------------- ActionRecordStrategy ------------------------ */
 
 class LIB_SPECTER_API ActionRecordStrategy : public QObject {
@@ -30,8 +34,8 @@ public:
   template<typename TYPE>
   [[nodiscard]] TYPE *getWidgetAs() const;
 
-  [[nodiscard]] ObjectQuery getWidgetAsQuery() const;
-  [[nodiscard]] ObjectId getWidgetAsId() const;
+  [[nodiscard]] ObjectQuery getObjectAsQuery(QObject *object) const;
+  [[nodiscard]] ObjectId getObjectAsId(QObject *object) const;
 
   [[nodiscard]] int getType() const;
 
@@ -42,6 +46,8 @@ protected:
   virtual void installConnections(QWidget *widget);
   virtual void removeConnections(QWidget *widget);
 
+  template<typename TYPE, QObjectPtrConcept OBJECT_PTR_TYPE, typename... ARGS>
+  void recordAction(OBJECT_PTR_TYPE object, ARGS &&...args);
   template<typename TYPE, typename... ARGS>
   void recordAction(ARGS &&...args);
 
@@ -59,10 +65,17 @@ TYPE *ActionRecordStrategy::getWidgetAs() const {
   return specific_widget;
 }
 
+template<typename TYPE, QObjectPtrConcept OBJECT_PTR_TYPE, typename... ARGS>
+void ActionRecordStrategy::recordAction(
+  OBJECT_PTR_TYPE object, ARGS &&...args) {
+  Q_EMIT actionRecorded(TYPE{
+    getObjectAsQuery(object), getObjectAsId(object),
+    std::forward<ARGS>(args)...});
+}
+
 template<typename TYPE, typename... ARGS>
 void ActionRecordStrategy::recordAction(ARGS &&...args) {
-  Q_EMIT actionRecorded(
-    TYPE{getWidgetAsQuery(), getWidgetAsId(), std::forward<ARGS>(args)...});
+  recordAction<TYPE>(getWidget(), std::forward<ARGS>(args)...);
 }
 
 /* ------------------------- ActionRecordWidgetStrategy --------------------- */
@@ -81,6 +94,8 @@ protected:
 
 private Q_SLOTS:
   void onOpenContextMenu();
+  void onClosed();
+  void onWindowStateChanged(Qt::WindowStates newStates);
 };
 
 /* ------------------------- ActionRecordButtonStrategy --------------------- */
@@ -94,7 +109,7 @@ public:
   ~ActionRecordButtonStrategy() override;
 
 protected:
-  void installConnections(QWidget *widget) override;
+  bool eventFilter(QObject *obj, QEvent *event) override;
 
 private Q_SLOTS:
   void onPressed();
@@ -204,10 +219,35 @@ public:
   ~ActionRecordMenuStrategy() override;
 
 protected:
-  bool eventFilter(QObject *obj, QEvent *event) override;
+  void installConnections(QWidget *widget) override;
 
 private Q_SLOTS:
   void onTriggered(QAction *action);
+  void onHovered(QAction *action);
+
+private:
+  QAction *m_lastHovered;
+};
+
+/* ------------------------- ActionRecordMenuBarStrategy -------------------- */
+
+class LIB_SPECTER_API ActionRecordMenuBarStrategy
+    : public ActionRecordStrategy {
+  Q_OBJECT
+
+public:
+  explicit ActionRecordMenuBarStrategy(QObject *parent = nullptr);
+  ~ActionRecordMenuBarStrategy() override;
+
+protected:
+  void installConnections(QWidget *widget) override;
+
+private Q_SLOTS:
+  void onTriggered(QAction *action);
+  void onHovered(QAction *action);
+
+private:
+  QAction *m_lastHovered;
 };
 
 /* ------------------------ ActionRecordTextEditStrategy -------------------- */
@@ -258,7 +298,6 @@ public:
 
 protected:
   void installConnections(QWidget *widget) override;
-  void removeConnections(QWidget *widget) override;
 
 private Q_SLOTS:
   void onDataChanged(

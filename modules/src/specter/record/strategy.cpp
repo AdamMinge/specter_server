@@ -121,35 +121,13 @@ ActionRecordButtonStrategy::ActionRecordButtonStrategy(QObject *parent)
 
 ActionRecordButtonStrategy::~ActionRecordButtonStrategy() = default;
 
-bool ActionRecordButtonStrategy::eventFilter(QObject *obj, QEvent *event) {
-  if (auto button = getWidgetAs<QAbstractButton>(); button == obj) {
-    switch (event->type()) {
-      case QEvent::MouseButtonRelease: {
-        const auto mouse_event = static_cast<QMouseEvent *>(event);
-        const auto mouse_position = mouse_event->position().toPoint();
-        const auto button_rect = button->rect();
-        if (!button_rect.contains(mouse_position)) break;
+void ActionRecordButtonStrategy::installConnections(QWidget *widget) {
+  auto button = qobject_cast<QAbstractButton *>(widget);
+  Q_ASSERT(button);
 
-        onPressed();
-
-        break;
-      }
-
-      case QEvent::KeyPress: {
-        const auto key_event = static_cast<QKeyEvent *>(event);
-        if (
-          key_event->key() == Qt::Key_Space ||
-          key_event->key() == Qt::Key_Return ||
-          key_event->key() == Qt::Key_Enter) {
-          onPressed();
-        }
-
-        break;
-      }
-    }
-  }
-
-  return ActionRecordWidgetStrategy::eventFilter(obj, event);
+  connect(
+    button, &QAbstractButton::clicked, this,
+    &ActionRecordButtonStrategy::onPressed);
 }
 
 void ActionRecordButtonStrategy::onPressed() {

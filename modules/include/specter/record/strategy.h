@@ -94,7 +94,7 @@ public:
   ~ActionRecordButtonStrategy() override;
 
 protected:
-  bool eventFilter(QObject *obj, QEvent *event) override;
+  void installConnections(QWidget *widget) override;
 
 private Q_SLOTS:
   void onPressed();

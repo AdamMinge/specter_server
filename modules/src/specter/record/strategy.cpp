@@ -97,11 +97,8 @@ bool ActionRecordWidgetStrategy::eventFilter(QObject *obj, QEvent *event) {
   if (auto widget = getWidget(); widget == obj) {
     switch (event->type()) {
       case QEvent::ContextMenu:
-        if (
-          widget->contextMenuPolicy() != Qt::ContextMenuPolicy::NoContextMenu) {
-          onOpenContextMenu();
-          break;
-        }
+        onOpenContextMenu();
+        break;
       case QEvent::Close:
         onClosed();
         break;
@@ -343,7 +340,7 @@ void ActionRecordToolBoxStrategy::onCurrentChanged(int index) {
 int ActionRecordMenuStrategy::getType() { return qMetaTypeId<QMenu>(); }
 
 ActionRecordMenuStrategy::ActionRecordMenuStrategy(QObject *parent)
-    : ActionRecordStrategy(parent) {}
+    : ActionRecordStrategy(parent), m_lastHovered(nullptr) {}
 
 ActionRecordMenuStrategy::~ActionRecordMenuStrategy() = default;
 
@@ -355,9 +352,6 @@ void ActionRecordMenuStrategy::installConnections(QWidget *widget) {
     menu, &QMenu::triggered, this, &ActionRecordMenuStrategy::onTriggered);
 
   connect(menu, &QMenu::hovered, this, &ActionRecordMenuStrategy::onHovered);
-
-  connect(
-    menu, &QMenu::aboutToHide, this, [this]() { m_lastHovered = nullptr; });
 }
 
 void ActionRecordMenuStrategy::onTriggered(QAction *action) {

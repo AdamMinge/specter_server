@@ -25,7 +25,7 @@ class LIB_SPECTER_API ActionRecordStrategy : public QObject {
   Q_OBJECT
 
 public:
-  explicit ActionRecordStrategy(int type, QObject *parent = nullptr);
+  explicit ActionRecordStrategy(QObject *parent = nullptr);
   ~ActionRecordStrategy() override;
 
   void setWidget(QWidget *widget);
@@ -37,22 +37,19 @@ public:
   [[nodiscard]] ObjectQuery getObjectAsQuery(QObject *object) const;
   [[nodiscard]] ObjectId getObjectAsId(QObject *object) const;
 
-  [[nodiscard]] int getType() const;
-
 Q_SIGNALS:
-  void actionRecorded(const RecordedAction &action);
+  void actionReported(const RecordedAction &action);
 
 protected:
   virtual void installConnections(QWidget *widget);
   virtual void removeConnections(QWidget *widget);
 
   template<typename TYPE, QObjectPtrConcept OBJECT_PTR_TYPE, typename... ARGS>
-  void recordAction(OBJECT_PTR_TYPE object, ARGS &&...args);
+  void reportAction(OBJECT_PTR_TYPE object, ARGS &&...args);
   template<typename TYPE, typename... ARGS>
-  void recordAction(ARGS &&...args);
+  void reportAction(ARGS &&...args);
 
 private:
-  int m_type;
   QPointer<QWidget> m_widget;
 };
 
@@ -60,22 +57,23 @@ template<typename TYPE>
 TYPE *ActionRecordStrategy::getWidgetAs() const {
   const auto widget = getWidget();
   const auto specific_widget = qobject_cast<TYPE *>(widget);
+
   Q_ASSERT(widget == specific_widget);
 
   return specific_widget;
 }
 
 template<typename TYPE, QObjectPtrConcept OBJECT_PTR_TYPE, typename... ARGS>
-void ActionRecordStrategy::recordAction(
+void ActionRecordStrategy::reportAction(
   OBJECT_PTR_TYPE object, ARGS &&...args) {
-  Q_EMIT actionRecorded(TYPE{
+  Q_EMIT actionReported(TYPE{
     getObjectAsQuery(object), getObjectAsId(object),
     std::forward<ARGS>(args)...});
 }
 
 template<typename TYPE, typename... ARGS>
-void ActionRecordStrategy::recordAction(ARGS &&...args) {
-  recordAction<TYPE>(getWidget(), std::forward<ARGS>(args)...);
+void ActionRecordStrategy::reportAction(ARGS &&...args) {
+  reportAction<TYPE>(getWidget(), std::forward<ARGS>(args)...);
 }
 
 /* ------------------------- ActionRecordWidgetStrategy --------------------- */
@@ -84,11 +82,11 @@ class LIB_SPECTER_API ActionRecordWidgetStrategy : public ActionRecordStrategy {
   Q_OBJECT
 
 public:
+  [[nodiscard]] static int getType();
+
+public:
   explicit ActionRecordWidgetStrategy(QObject *parent = nullptr);
   ~ActionRecordWidgetStrategy() override;
-
-protected:
-  explicit ActionRecordWidgetStrategy(int type, QObject *parent = nullptr);
 
   bool eventFilter(QObject *obj, QEvent *event) override;
 
@@ -105,11 +103,14 @@ class LIB_SPECTER_API ActionRecordButtonStrategy
   Q_OBJECT
 
 public:
+  [[nodiscard]] static int getType();
+
+public:
   explicit ActionRecordButtonStrategy(QObject *parent = nullptr);
   ~ActionRecordButtonStrategy() override;
 
 protected:
-  bool eventFilter(QObject *obj, QEvent *event) override;
+  void installConnections(QWidget *widget);
 
 private Q_SLOTS:
   void onPressed();
@@ -122,6 +123,9 @@ private Q_SLOTS:
 class LIB_SPECTER_API ActionRecordComboBoxStrategy
     : public ActionRecordWidgetStrategy {
   Q_OBJECT
+
+public:
+  [[nodiscard]] static int getType();
 
 public:
   explicit ActionRecordComboBoxStrategy(QObject *parent = nullptr);
@@ -139,6 +143,9 @@ private Q_SLOTS:
 class LIB_SPECTER_API ActionRecordSpinBoxStrategy
     : public ActionRecordWidgetStrategy {
   Q_OBJECT
+
+public:
+  [[nodiscard]] static int getType();
 
 public:
   explicit ActionRecordSpinBoxStrategy(QObject *parent = nullptr);
@@ -159,6 +166,9 @@ class LIB_SPECTER_API ActionRecordSliderStrategy
   Q_OBJECT
 
 public:
+  [[nodiscard]] static int getType();
+
+public:
   explicit ActionRecordSliderStrategy(QObject *parent = nullptr);
   ~ActionRecordSliderStrategy() override;
 
@@ -174,6 +184,9 @@ private Q_SLOTS:
 class LIB_SPECTER_API ActionRecordTabBarStrategy
     : public ActionRecordWidgetStrategy {
   Q_OBJECT
+
+public:
+  [[nodiscard]] static int getType();
 
 public:
   explicit ActionRecordTabBarStrategy(QObject *parent = nullptr);
@@ -199,6 +212,9 @@ class LIB_SPECTER_API ActionRecordToolBoxStrategy
   Q_OBJECT
 
 public:
+  [[nodiscard]] static int getType();
+
+public:
   explicit ActionRecordToolBoxStrategy(QObject *parent = nullptr);
   ~ActionRecordToolBoxStrategy() override;
 
@@ -213,6 +229,9 @@ private Q_SLOTS:
 
 class LIB_SPECTER_API ActionRecordMenuStrategy : public ActionRecordStrategy {
   Q_OBJECT
+
+public:
+  [[nodiscard]] static int getType();
 
 public:
   explicit ActionRecordMenuStrategy(QObject *parent = nullptr);
@@ -236,6 +255,9 @@ class LIB_SPECTER_API ActionRecordMenuBarStrategy
   Q_OBJECT
 
 public:
+  [[nodiscard]] static int getType();
+
+public:
   explicit ActionRecordMenuBarStrategy(QObject *parent = nullptr);
   ~ActionRecordMenuBarStrategy() override;
 
@@ -257,6 +279,9 @@ class LIB_SPECTER_API ActionRecordTextEditStrategy
   Q_OBJECT
 
 public:
+  [[nodiscard]] static int getType();
+
+public:
   explicit ActionRecordTextEditStrategy(QObject *parent = nullptr);
   ~ActionRecordTextEditStrategy() override;
 
@@ -272,6 +297,9 @@ private Q_SLOTS:
 class LIB_SPECTER_API ActionRecordLineEditStrategy
     : public ActionRecordWidgetStrategy {
   Q_OBJECT
+
+public:
+  [[nodiscard]] static int getType();
 
 public:
   explicit ActionRecordLineEditStrategy(QObject *parent = nullptr);
@@ -291,6 +319,9 @@ private Q_SLOTS:
 class LIB_SPECTER_API ActionRecordItemViewStrategy
     : public ActionRecordWidgetStrategy {
   Q_OBJECT
+
+public:
+  [[nodiscard]] static int getType();
 
 public:
   explicit ActionRecordItemViewStrategy(QObject *parent = nullptr);

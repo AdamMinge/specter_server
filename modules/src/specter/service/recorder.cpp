@@ -4,7 +4,6 @@
 #include "specter/module.h"
 #include "specter/record/action.h"
 #include "specter/record/recorder.h"
-#include "specter/record/strategy.h"
 /* ------------------------------------ Qt ---------------------------------- */
 #include <QApplication>
 /* -------------------------------------------------------------------------- */
@@ -229,20 +228,6 @@ RecorderListenCommandsCall::RecorderListenCommandsCall(
       m_recorder(std::make_unique<ActionRecorder>()),
       m_recorder_queue(std::make_unique<ActionRecorderQueue>()),
       m_mapper(std::make_unique<RecordedActionsMapper>()) {
-  m_recorder->addStrategy(new ActionRecordWidgetStrategy());
-  m_recorder->addStrategy(new ActionRecordButtonStrategy());
-  m_recorder->addStrategy(new ActionRecordComboBoxStrategy());
-  m_recorder->addStrategy(new ActionRecordSpinBoxStrategy());
-  m_recorder->addStrategy(new ActionRecordSliderStrategy());
-  m_recorder->addStrategy(new ActionRecordTabBarStrategy());
-  m_recorder->addStrategy(new ActionRecordToolBoxStrategy());
-  m_recorder->addStrategy(new ActionRecordMenuStrategy());
-  m_recorder->addStrategy(new ActionRecordMenuBarStrategy());
-  m_recorder->addStrategy(new ActionRecordTextEditStrategy());
-  m_recorder->addStrategy(new ActionRecordLineEditStrategy());
-  m_recorder->addStrategy(new ActionRecordItemViewStrategy());
-  m_recorder->addStrategy(new ActionRecordButtonStrategy());
-
   m_recorder_queue->setRecorder(m_recorder.get());
 }
 

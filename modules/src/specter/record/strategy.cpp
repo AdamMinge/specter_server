@@ -42,8 +42,8 @@ namespace specter {
 
 /* ---------------------------- ActionRecordStrategy ------------------------ */
 
-ActionRecordStrategy::ActionRecordStrategy(int type, QObject *parent)
-    : QObject(parent), m_type(type), m_widget(nullptr) {}
+ActionRecordStrategy::ActionRecordStrategy(QObject *parent)
+    : QObject(parent), m_widget(nullptr) {}
 
 ActionRecordStrategy::~ActionRecordStrategy() = default;
 
@@ -76,8 +76,6 @@ ObjectId ActionRecordStrategy::getObjectAsId(QObject *object) const {
   return id;
 }
 
-int ActionRecordStrategy::getType() const { return m_type; }
-
 void ActionRecordStrategy::installConnections(QWidget *widget) {
   Q_UNUSED(widget);
 }
@@ -88,12 +86,10 @@ void ActionRecordStrategy::removeConnections(QWidget *widget) {
 
 /* ------------------------- ActionRecordWidgetStrategy --------------------- */
 
-ActionRecordWidgetStrategy::ActionRecordWidgetStrategy(QObject *parent)
-    : ActionRecordStrategy(qMetaTypeId<QWidget>(), parent) {}
+int ActionRecordWidgetStrategy::getType() { return qMetaTypeId<QWidget>(); }
 
-ActionRecordWidgetStrategy::ActionRecordWidgetStrategy(
-  int type, QObject *parent)
-    : ActionRecordStrategy(type, parent) {}
+ActionRecordWidgetStrategy::ActionRecordWidgetStrategy(QObject *parent)
+    : ActionRecordStrategy(parent) {}
 
 ActionRecordWidgetStrategy::~ActionRecordWidgetStrategy() = default;
 
@@ -101,8 +97,11 @@ bool ActionRecordWidgetStrategy::eventFilter(QObject *obj, QEvent *event) {
   if (auto widget = getWidget(); widget == obj) {
     switch (event->type()) {
       case QEvent::ContextMenu:
-        onOpenContextMenu();
-        break;
+        if (
+          widget->contextMenuPolicy() != Qt::ContextMenuPolicy::NoContextMenu) {
+          onOpenContextMenu();
+          break;
+        }
       case QEvent::Close:
         onClosed();
         break;
@@ -118,66 +117,40 @@ bool ActionRecordWidgetStrategy::eventFilter(QObject *obj, QEvent *event) {
 }
 
 void ActionRecordWidgetStrategy::onOpenContextMenu() {
-  recordAction<RecordedAction::ContextMenuOpened>();
+  reportAction<RecordedAction::ContextMenuOpened>();
 }
 
 void ActionRecordWidgetStrategy::onClosed() {
-  recordAction<RecordedAction::WindowClosed>();
+  reportAction<RecordedAction::WindowClosed>();
 }
 
 void ActionRecordWidgetStrategy::onWindowStateChanged(
   Qt::WindowStates newState) {
   if (newState == Qt::WindowMinimized) {
-    recordAction<RecordedAction::WindowMinimized>();
+    reportAction<RecordedAction::WindowMinimized>();
   } else if (newState == Qt::WindowMaximized) {
-    recordAction<RecordedAction::WindowMaximized>();
+    reportAction<RecordedAction::WindowMaximized>();
   }
 }
 
 /* ------------------------- ActionRecordButtonStrategy --------------------- */
 
+int ActionRecordButtonStrategy::getType() {
+  return qMetaTypeId<QAbstractButton>();
+}
+
 ActionRecordButtonStrategy::ActionRecordButtonStrategy(QObject *parent)
-    : ActionRecordWidgetStrategy(qMetaTypeId<QAbstractButton>(), parent) {}
+    : ActionRecordWidgetStrategy(parent) {}
 
 ActionRecordButtonStrategy::~ActionRecordButtonStrategy() = default;
 
-bool ActionRecordButtonStrategy::eventFilter(QObject *obj, QEvent *event) {
-  const auto tryPress = [this](auto button) {
-    if (!button) return;
+void ActionRecordButtonStrategy::installConnections(QWidget *widget) {
+  auto button = qobject_cast<QAbstractButton *>(widget);
+  Q_ASSERT(button);
 
-    const auto is_disabled = !button->isEnabled();
-    if (is_disabled) return;
-
-    onPressed();
-  };
-
-  if (auto button = getWidgetAs<QAbstractButton>(); button == obj) {
-    switch (event->type()) {
-      case QEvent::MouseButtonRelease: {
-        const auto mouse_event = static_cast<QMouseEvent *>(event);
-        const auto mouse_position = mouse_event->position().toPoint();
-        const auto button_rect = button->rect();
-        if (!button_rect.contains(mouse_position)) break;
-
-        tryPress(button);
-        break;
-      }
-
-      case QEvent::KeyPress: {
-        const auto key_event = static_cast<QKeyEvent *>(event);
-        if (
-          key_event->key() == Qt::Key_Space ||
-          key_event->key() == Qt::Key_Return ||
-          key_event->key() == Qt::Key_Enter) {
-          tryPress(button);
-        }
-
-        break;
-      }
-    }
-  }
-
-  return ActionRecordWidgetStrategy::eventFilter(obj, event);
+  connect(
+    button, &QAbstractButton::pressed, this,
+    &ActionRecordButtonStrategy::onPressed);
 }
 
 void ActionRecordButtonStrategy::onPressed() {
@@ -191,17 +164,19 @@ void ActionRecordButtonStrategy::onPressed() {
 }
 
 void ActionRecordButtonStrategy::onClicked() {
-  recordAction<RecordedAction::ButtonClicked>();
+  reportAction<RecordedAction::ButtonClicked>();
 }
 
 void ActionRecordButtonStrategy::onToggled(bool checked) {
-  recordAction<RecordedAction::ButtonToggled>(checked);
+  reportAction<RecordedAction::ButtonToggled>(checked);
 }
 
 /* ------------------------ ActionRecordComboBoxStrategy -------------------- */
 
+int ActionRecordComboBoxStrategy::getType() { return qMetaTypeId<QComboBox>(); }
+
 ActionRecordComboBoxStrategy::ActionRecordComboBoxStrategy(QObject *parent)
-    : ActionRecordWidgetStrategy(qMetaTypeId<QComboBox>(), parent) {}
+    : ActionRecordWidgetStrategy(parent) {}
 
 ActionRecordComboBoxStrategy::~ActionRecordComboBoxStrategy() = default;
 
@@ -215,13 +190,17 @@ void ActionRecordComboBoxStrategy::installConnections(QWidget *widget) {
 }
 
 void ActionRecordComboBoxStrategy::onCurrentIndexChanged(int index) {
-  recordAction<RecordedAction::ComboBoxCurrentChanged>(index);
+  reportAction<RecordedAction::ComboBoxCurrentChanged>(index);
 }
 
 /* ------------------------ ActionRecordSpinBoxStrategy --------------------- */
 
+int ActionRecordSpinBoxStrategy::getType() {
+  return qMetaTypeId<QAbstractSpinBox>();
+}
+
 ActionRecordSpinBoxStrategy::ActionRecordSpinBoxStrategy(QObject *parent)
-    : ActionRecordWidgetStrategy(qMetaTypeId<QAbstractSpinBox>(), parent) {}
+    : ActionRecordWidgetStrategy(parent) {}
 
 ActionRecordSpinBoxStrategy::~ActionRecordSpinBoxStrategy() = default;
 
@@ -240,17 +219,21 @@ void ActionRecordSpinBoxStrategy::installConnections(QWidget *widget) {
 }
 
 void ActionRecordSpinBoxStrategy::onValueChanged(double value) {
-  recordAction<RecordedAction::DoubleSpinBoxValueChanged>(value);
+  reportAction<RecordedAction::DoubleSpinBoxValueChanged>(value);
 }
 
 void ActionRecordSpinBoxStrategy::onValueChanged(int value) {
-  recordAction<RecordedAction::SpinBoxValueChanged>(value);
+  reportAction<RecordedAction::SpinBoxValueChanged>(value);
 }
 
 /* ------------------------- ActionRecordSliderStrategy --------------------- */
 
+int ActionRecordSliderStrategy::getType() {
+  return qMetaTypeId<QAbstractSlider>();
+}
+
 ActionRecordSliderStrategy::ActionRecordSliderStrategy(QObject *parent)
-    : ActionRecordWidgetStrategy(qMetaTypeId<QAbstractSlider>(), parent) {}
+    : ActionRecordWidgetStrategy(parent) {}
 
 ActionRecordSliderStrategy::~ActionRecordSliderStrategy() = default;
 
@@ -264,14 +247,15 @@ void ActionRecordSliderStrategy::installConnections(QWidget *widget) {
 }
 
 void ActionRecordSliderStrategy::onValueChanged(int value) {
-  recordAction<RecordedAction::SliderValueChanged>(value);
+  reportAction<RecordedAction::SliderValueChanged>(value);
 }
 
 /* ------------------------- ActionRecordTabBarStrategy --------------------- */
 
+int ActionRecordTabBarStrategy::getType() { return qMetaTypeId<QTabBar>(); }
+
 ActionRecordTabBarStrategy::ActionRecordTabBarStrategy(QObject *parent)
-    : ActionRecordWidgetStrategy(qMetaTypeId<QTabBar>(), parent),
-      m_closing(false) {}
+    : ActionRecordWidgetStrategy(parent), m_closing(false) {}
 
 ActionRecordTabBarStrategy::~ActionRecordTabBarStrategy() = default;
 
@@ -321,21 +305,23 @@ void ActionRecordTabBarStrategy::removeConnections(QWidget *widget) {
 }
 
 void ActionRecordTabBarStrategy::onCurrentChanged(int index) {
-  recordAction<RecordedAction::TabCurrentChanged>(index);
+  reportAction<RecordedAction::TabCurrentChanged>(index);
 }
 
 void ActionRecordTabBarStrategy::onTabClosed(int index) {
-  recordAction<RecordedAction::TabClosed>(index);
+  reportAction<RecordedAction::TabClosed>(index);
 }
 
 void ActionRecordTabBarStrategy::onTabMoved(int from, int to) {
-  recordAction<RecordedAction::TabMoved>(from, to);
+  reportAction<RecordedAction::TabMoved>(from, to);
 }
 
 /* ------------------------- ActionRecordToolBoxStrategy -------------------- */
 
+int ActionRecordToolBoxStrategy::getType() { return qMetaTypeId<QToolBox>(); }
+
 ActionRecordToolBoxStrategy::ActionRecordToolBoxStrategy(QObject *parent)
-    : ActionRecordWidgetStrategy(qMetaTypeId<QToolBox>(), parent) {}
+    : ActionRecordWidgetStrategy(parent) {}
 
 ActionRecordToolBoxStrategy::~ActionRecordToolBoxStrategy() = default;
 
@@ -349,13 +335,15 @@ void ActionRecordToolBoxStrategy::installConnections(QWidget *widget) {
 }
 
 void ActionRecordToolBoxStrategy::onCurrentChanged(int index) {
-  recordAction<RecordedAction::ToolBoxCurrentChanged>(index);
+  reportAction<RecordedAction::ToolBoxCurrentChanged>(index);
 }
 
 /* ------------------------- ActionRecordMenuStrategy ---------------------- */
 
+int ActionRecordMenuStrategy::getType() { return qMetaTypeId<QMenu>(); }
+
 ActionRecordMenuStrategy::ActionRecordMenuStrategy(QObject *parent)
-    : ActionRecordStrategy(qMetaTypeId<QMenu>(), parent) {}
+    : ActionRecordStrategy(parent) {}
 
 ActionRecordMenuStrategy::~ActionRecordMenuStrategy() = default;
 
@@ -376,7 +364,7 @@ void ActionRecordMenuStrategy::onTriggered(QAction *action) {
   if (!action || !action->isEnabled()) return;
   if (action->menu()) return;
 
-  recordAction<RecordedAction::ActionTriggered>(action);
+  reportAction<RecordedAction::ActionTriggered>(action);
 }
 
 void ActionRecordMenuStrategy::onHovered(QAction *action) {
@@ -385,13 +373,15 @@ void ActionRecordMenuStrategy::onHovered(QAction *action) {
   if (action == m_lastHovered) return;
   m_lastHovered = action;
 
-  recordAction<RecordedAction::ActionHovered>(action);
+  reportAction<RecordedAction::ActionHovered>(action);
 }
 
 /* ------------------------- ActionRecordMenuBarStrategy -------------------- */
 
+int ActionRecordMenuBarStrategy::getType() { return qMetaTypeId<QMenuBar>(); }
+
 ActionRecordMenuBarStrategy::ActionRecordMenuBarStrategy(QObject *parent)
-    : ActionRecordStrategy(qMetaTypeId<QMenuBar>(), parent) {}
+    : ActionRecordStrategy(parent) {}
 
 ActionRecordMenuBarStrategy::~ActionRecordMenuBarStrategy() = default;
 
@@ -405,14 +395,11 @@ void ActionRecordMenuBarStrategy::installConnections(QWidget *widget) {
 
   connect(
     menubar, &QMenuBar::hovered, this, &ActionRecordMenuBarStrategy::onHovered);
-
-  connect(
-    menubar, &QMenu::destroyed, this, [this]() { m_lastHovered = nullptr; });
 }
 
 void ActionRecordMenuBarStrategy::onTriggered(QAction *action) {
   if (!action || !action->isEnabled()) return;
-  recordAction<RecordedAction::ActionTriggered>(action);
+  reportAction<RecordedAction::ActionTriggered>(action);
 }
 
 void ActionRecordMenuBarStrategy::onHovered(QAction *action) {
@@ -421,13 +408,15 @@ void ActionRecordMenuBarStrategy::onHovered(QAction *action) {
   if (action == m_lastHovered) return;
   m_lastHovered = action;
 
-  recordAction<RecordedAction::ActionHovered>(action);
+  reportAction<RecordedAction::ActionHovered>(action);
 }
 
 /* ------------------------ ActionRecordTextEditStrategy -------------------- */
 
+int ActionRecordTextEditStrategy::getType() { return qMetaTypeId<QTextEdit>(); }
+
 ActionRecordTextEditStrategy::ActionRecordTextEditStrategy(QObject *parent)
-    : ActionRecordWidgetStrategy(qMetaTypeId<QTextEdit>(), parent) {}
+    : ActionRecordWidgetStrategy(parent) {}
 
 ActionRecordTextEditStrategy::~ActionRecordTextEditStrategy() = default;
 
@@ -441,13 +430,15 @@ void ActionRecordTextEditStrategy::installConnections(QWidget *widget) {
 }
 
 void ActionRecordTextEditStrategy::onTextChanged(const QString &text) {
-  recordAction<RecordedAction::TextEditTextChanged>(text);
+  reportAction<RecordedAction::TextEditTextChanged>(text);
 }
 
 /* ------------------------ ActionRecordLineEditStrategy -------------------- */
 
+int ActionRecordLineEditStrategy::getType() { return qMetaTypeId<QLineEdit>(); }
+
 ActionRecordLineEditStrategy::ActionRecordLineEditStrategy(QObject *parent)
-    : ActionRecordWidgetStrategy(qMetaTypeId<QLineEdit>(), parent) {}
+    : ActionRecordWidgetStrategy(parent) {}
 
 ActionRecordLineEditStrategy::~ActionRecordLineEditStrategy() = default;
 
@@ -480,17 +471,21 @@ bool ActionRecordLineEditStrategy::eventFilter(QObject *obj, QEvent *event) {
 }
 
 void ActionRecordLineEditStrategy::onTextChanged(const QString &text) {
-  recordAction<RecordedAction::LineEditTextChanged>(text);
+  reportAction<RecordedAction::LineEditTextChanged>(text);
 }
 
 void ActionRecordLineEditStrategy::onReturnPressed() {
-  recordAction<RecordedAction::LineEditReturnPressed>();
+  reportAction<RecordedAction::LineEditReturnPressed>();
 }
 
 /* ------------------------ ActionRecordItemViewStrategy -------------------- */
 
+int ActionRecordItemViewStrategy::getType() {
+  return qMetaTypeId<QAbstractItemView>();
+}
+
 ActionRecordItemViewStrategy::ActionRecordItemViewStrategy(QObject *parent)
-    : ActionRecordWidgetStrategy(qMetaTypeId<QAbstractItemView>(), parent) {}
+    : ActionRecordWidgetStrategy(parent) {}
 
 ActionRecordItemViewStrategy::~ActionRecordItemViewStrategy() = default;
 

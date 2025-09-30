@@ -17,29 +17,6 @@ namespace specter {
 
 class ActionRecordStrategy;
 
-/* ------------------------ ActionRecorderWidgetListener -------------------- */
-
-class LIB_SPECTER_API ActionRecorderWidgetListener : public QObject {
-  Q_OBJECT
-
-public:
-  explicit ActionRecorderWidgetListener(QObject *parent = nullptr);
-  ~ActionRecorderWidgetListener() override;
-
-Q_SIGNALS:
-  void currentWidgetChanged(QWidget *widget);
-
-protected Q_SLOTS:
-  bool eventFilter(QObject *obj, QEvent *event) override;
-
-private:
-  void setWidget(QWidget *widget);
-  [[nodiscard]] QWidget *findWidget(QWidget *widget) const;
-
-private:
-  QWidget *m_current_widget;
-};
-
 /* ------------------------------- ActionRecorder --------------------------- */
 
 class LIB_SPECTER_API ActionRecorder : public QObject {
@@ -54,23 +31,42 @@ public:
 
   [[nodiscard]] bool isRecording() const;
 
-  bool addStrategy(ActionRecordStrategy *strategy);
-
 Q_SIGNALS:
   void actionReported(const RecordedAction &action);
 
-protected Q_SLOTS:
-  void onCurrentWidgetChanged(QWidget *widget);
+protected:
+  bool eventFilter(QObject *object, QEvent *event) override;
+
+private Q_SLOTS:
+  void cleanupStaleStrategies();
 
 private:
-  [[nodiscard]] ActionRecordStrategy *findStrategy(QWidget *widget) const;
+  template<typename STRATEGY>
+  void registerStrategy();
+
+  [[nodiscard]] bool hadRecentUserEvent(QWidget *widget) const;
+
+  [[nodiscard]] ActionRecordStrategy *createStrategy(QWidget *widget);
+  void removeStrategy(QWidget *widget);
 
 private:
-  std::unordered_map<int, ActionRecordStrategy *> m_strategies;
-  ActionRecordStrategy *m_current_strategy;
-  ActionRecorderWidgetListener *m_widget_listener;
+  using StrategyFactory = std::function<ActionRecordStrategy *()>;
+
+private:
+  std::unordered_map<int, StrategyFactory> m_strategies_factories;
+  std::unordered_map<QWidget *, ActionRecordStrategy *> m_strategies;
+  std::unordered_map<QWidget *, qint64> m_last_user_events;
+  QTimer *m_cleanup_timer;
   bool m_recording;
 };
+
+template<typename STRATEGY>
+void ActionRecorder::registerStrategy() {
+  m_strategies_factories.insert(
+    std::make_pair(STRATEGY::getType(), [this]() -> ActionRecordStrategy * {
+      return new STRATEGY(this);
+    }));
+}
 
 /* ----------------------------- ActionRecorderQueue ------------------------ */
 

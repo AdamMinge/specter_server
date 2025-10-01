@@ -140,18 +140,16 @@ QMap<int, QSet<QString>> PropertiesSearch::getTypeToProperties() {
   const auto type_to_properties = QMap<int, QSet<QString>>{
     DEF_PROP(QWidget),
     DEF_PROP(QPushButton, "text"),
-    DEF_PROP(QLineEdit, "text", "placeholderText"),
+    DEF_PROP(QLineEdit, "placeholderText"),
+    DEF_PROP(QPlainTextEdit, "placeholderText"),
     DEF_PROP(QLabel, "text"),
     DEF_PROP(QMenu, "title"),
     DEF_PROP(QAction, "text"),
-    DEF_PROP(QCheckBox, "checked", "text"),
-    DEF_PROP(QComboBox, "currentText"),
-    DEF_PROP(QRadioButton, "checked", "text"),
-    DEF_PROP(QAbstractSlider, "value", "maximum", "minimum"),
-    DEF_PROP(QProgressBar, "value", "maximum", "minimum"),
-    DEF_PROP(QTabWidget, "currentIndex", "count"),
-    DEF_PROP(QTableWidget, "rowCount", "columnCount"),
-    DEF_PROP(QPlainTextEdit, "plainText"),
+    DEF_PROP(QCheckBox, "text"),
+    DEF_PROP(QComboBox, "editable"),
+    DEF_PROP(QRadioButton, "text"),
+    DEF_PROP(QAbstractSlider, "maximum", "minimum"),
+    DEF_PROP(QProgressBar, "maximum", "minimum"),
   };
 
 #undef DEF_PROP
@@ -182,37 +180,17 @@ QVariantMap PathSearch::createObjectQuery(const QObject *object) const {
 }
 
 QString PathSearch::getPath(const QObject *object) const {
-  static auto getObjectName = [](auto object) -> QString {
-    auto object_name = object->objectName();
-    if (object_name.isEmpty()) {
-      object_name = object->metaObject()->className();
-    }
-
-    return object_name;
-  };
-
   auto current_object = object;
   auto objects_path = QStringList{};
 
   while (current_object) {
-    auto parent = current_object->parent();
-    auto object_name = getObjectName(current_object);
-
-    const auto siblings = parent ? parent->children() : getTopLevelObjects();
-    const auto duplicated_name = std::any_of(
-      siblings.begin(), siblings.end(),
-      [current_object, object_name](auto sibling) -> bool {
-        return (sibling != current_object) &&
-               (object_name == getObjectName(sibling));
-      });
-
-    if (duplicated_name) {
-      const auto index = siblings.indexOf(current_object);
-      object_name += QString("[%1]").arg(index);
+    auto object_name = current_object->objectName();
+    if (object_name.isEmpty()) {
+      object_name = current_object->metaObject()->className();
     }
 
     objects_path.prepend(object_name);
-    current_object = parent;
+    current_object = current_object->parent();
   }
 
   return objects_path.join("/");

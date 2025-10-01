@@ -66,8 +66,7 @@ void ActionRecordStrategy::setWidget(QWidget *widget) {
 QWidget *ActionRecordStrategy::getWidget() const { return m_widget; }
 
 ObjectQuery ActionRecordStrategy::getObjectAsQuery(QObject *object) const {
-  const auto query = searcher().getQueryUsingKinds(
-    object, {SearchStrategy::Kind::OrderIndex, SearchStrategy::Kind::Path});
+  const auto query = searcher().getQuery(object);
   return query;
 }
 

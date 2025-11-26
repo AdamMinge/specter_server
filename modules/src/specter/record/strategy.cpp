@@ -50,11 +50,6 @@ ObjectQuery ActionRecordStrategy::getObjectAsQuery(QObject *object) const {
   return query;
 }
 
-ObjectId ActionRecordStrategy::getObjectAsId(QObject *object) const {
-  const auto id = searcher().getId(object);
-  return id;
-}
-
 void ActionRecordStrategy::handleEvent(QWidget *widget, QEvent *event) {
   Q_UNUSED(widget);
   Q_UNUSED(event);

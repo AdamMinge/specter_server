@@ -19,109 +19,90 @@ class LIB_SPECTER_API RecordedAction {
 public:
   struct ContextMenuOpened {
     ObjectQuery object;
-    ObjectId id;
   };
 
   struct ButtonClicked {
     ObjectQuery object;
-    ObjectId id;
   };
 
   struct ButtonToggled {
     ObjectQuery object;
-    ObjectId id;
     bool checked;
   };
 
   struct ComboBoxCurrentChanged {
     ObjectQuery object;
-    ObjectId id;
     int index;
   };
 
   struct SpinBoxValueChanged {
     ObjectQuery object;
-    ObjectId id;
     int value;
   };
 
   struct DoubleSpinBoxValueChanged {
     ObjectQuery object;
-    ObjectId id;
     double value;
   };
 
   struct SliderValueChanged {
     ObjectQuery object;
-    ObjectId id;
     int value;
   };
 
   struct TabCurrentChanged {
     ObjectQuery object;
-    ObjectId id;
     int index;
   };
 
   struct TabClosed {
     ObjectQuery object;
-    ObjectId id;
     int index;
   };
 
   struct TabMoved {
     ObjectQuery object;
-    ObjectId id;
     int from;
     int to;
   };
 
   struct ToolBoxCurrentChanged {
     ObjectQuery object;
-    ObjectId id;
     int index;
   };
 
   struct ActionTriggered {
     ObjectQuery object;
-    ObjectId id;
   };
 
   struct ActionHovered {
     ObjectQuery object;
-    ObjectId id;
   };
 
   struct TextEditTextChanged {
     ObjectQuery object;
-    ObjectId id;
     QString value;
   };
 
   struct LineEditTextChanged {
     ObjectQuery object;
-    ObjectId id;
     QString value;
   };
 
   struct LineEditReturnPressed {
     ObjectQuery object;
-    ObjectId id;
   };
 
   struct WindowClosed {
     ObjectQuery object;
-    ObjectId id;
   };
 
   struct WindowMinimized {
     ObjectQuery object;
-    ObjectId id;
   };
 
   struct WindowMaximized {
     ObjectQuery object;
-    ObjectId id;
   };
 
 public:

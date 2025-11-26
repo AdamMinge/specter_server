@@ -52,7 +52,6 @@ public:
   [[nodiscard]] TYPE *getWidgetAs(QWidget *widget) const;
 
   [[nodiscard]] ObjectQuery getObjectAsQuery(QObject *object) const;
-  [[nodiscard]] ObjectId getObjectAsId(QObject *object) const;
 
 Q_SIGNALS:
   void actionReported(const RecordedAction &action);
@@ -79,9 +78,8 @@ TYPE *ActionRecordStrategy::getWidgetAs(QWidget *widget) const {
 template<typename TYPE, QObjectPtrConcept OBJECT_PTR_TYPE, typename... ARGS>
 void ActionRecordStrategy::reportAction(
   OBJECT_PTR_TYPE object, ARGS &&...args) {
-  Q_EMIT actionReported(TYPE{
-    getObjectAsQuery(object), getObjectAsId(object),
-    std::forward<ARGS>(args)...});
+  Q_EMIT actionReported(
+    TYPE{getObjectAsQuery(object), std::forward<ARGS>(args)...});
 }
 
 /* ------------------------- ActionRecordWidgetStrategy --------------------- */

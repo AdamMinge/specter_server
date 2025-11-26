@@ -11,11 +11,47 @@
 /* ----------------------------------- Local -------------------------------- */
 #include "specter/export.h"
 #include "specter/record/action.h"
+#include "specter/record/strategy.h"
 /* -------------------------------------------------------------------------- */
 
 namespace specter {
 
 class ActionRecordStrategy;
+
+/* ---------------------------- ActionStrategyManager ----------------------- */
+
+class LIB_SPECTER_API StrategyManager : public QObject {
+  Q_OBJECT
+
+public:
+  explicit StrategyManager(QObject *parent = nullptr);
+  ~StrategyManager();
+
+  void handleEvent(QObject *object, QEvent *event);
+
+Q_SIGNALS:
+  void actionRecorded(const RecordedAction &action);
+
+private:
+  template<typename STRATEGY>
+  void registerStrategy();
+
+  [[nodiscard]] ActionRecordStrategy *findStrategy(QObject *object) const;
+
+private:
+  std::unordered_map<int, ActionRecordStrategy *> m_strategies;
+};
+
+template<typename STRATEGY>
+void StrategyManager::registerStrategy() {
+  auto [iter, inserted] = m_strategies.insert(
+    std::make_pair(STRATEGY::getType(), new STRATEGY(this)));
+  Q_ASSERT(inserted);
+
+  connect(
+    iter->second, &ActionRecordStrategy::actionReported, this,
+    &StrategyManager::actionRecorded);
+}
 
 /* ------------------------------- ActionRecorder --------------------------- */
 
@@ -37,36 +73,10 @@ Q_SIGNALS:
 protected:
   bool eventFilter(QObject *object, QEvent *event) override;
 
-private Q_SLOTS:
-  void cleanupStaleStrategies();
-
 private:
-  template<typename STRATEGY>
-  void registerStrategy();
-
-  [[nodiscard]] bool hadRecentUserEvent(QWidget *widget) const;
-
-  [[nodiscard]] ActionRecordStrategy *createStrategy(QWidget *widget);
-  void removeStrategy(QWidget *widget);
-
-private:
-  using StrategyFactory = std::function<ActionRecordStrategy *()>;
-
-private:
-  std::unordered_map<int, StrategyFactory> m_strategies_factories;
-  std::unordered_map<QWidget *, ActionRecordStrategy *> m_strategies;
-  std::unordered_map<QWidget *, qint64> m_last_user_events;
-  QTimer *m_cleanup_timer;
+  StrategyManager *m_strategy_manager;
   bool m_recording;
 };
-
-template<typename STRATEGY>
-void ActionRecorder::registerStrategy() {
-  m_strategies_factories.insert(
-    std::make_pair(STRATEGY::getType(), [this]() -> ActionRecordStrategy * {
-      return new STRATEGY(this);
-    }));
-}
 
 /* ----------------------------- ActionRecorderQueue ------------------------ */
 

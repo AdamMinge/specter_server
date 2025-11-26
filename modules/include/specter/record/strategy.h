@@ -9,6 +9,24 @@
 #include "specter/export.h"
 #include "specter/search/id.h"
 #include "specter/search/query.h"
+/* ------------------------------------ Qt ---------------------------------- */
+#include <QAbstractButton>
+#include <QAbstractItemView>
+#include <QAbstractSlider>
+#include <QComboBox>
+#include <QDoubleSpinBox>
+#include <QEvent>
+#include <QItemSelectionModel>
+#include <QKeyEvent>
+#include <QLineEdit>
+#include <QMenu>
+#include <QMenuBar>
+#include <QMouseEvent>
+#include <QSpinBox>
+#include <QTabBar>
+#include <QTextEdit>
+#include <QToolBox>
+#include <QToolButton>
 /* -------------------------------------------------------------------------- */
 
 namespace specter {
@@ -28,11 +46,10 @@ public:
   explicit ActionRecordStrategy(QObject *parent = nullptr);
   ~ActionRecordStrategy() override;
 
-  void setWidget(QWidget *widget);
-  [[nodiscard]] QWidget *getWidget() const;
+  void handleEvent(QObject *object, QEvent *event);
 
   template<typename TYPE>
-  [[nodiscard]] TYPE *getWidgetAs() const;
+  [[nodiscard]] TYPE *getWidgetAs(QWidget *widget) const;
 
   [[nodiscard]] ObjectQuery getObjectAsQuery(QObject *object) const;
   [[nodiscard]] ObjectId getObjectAsId(QObject *object) const;
@@ -41,25 +58,21 @@ Q_SIGNALS:
   void actionReported(const RecordedAction &action);
 
 protected:
+  virtual void handleEvent(QWidget *widget, QEvent *event);
   virtual void installConnections(QWidget *widget);
   virtual void removeConnections(QWidget *widget);
 
   template<typename TYPE, QObjectPtrConcept OBJECT_PTR_TYPE, typename... ARGS>
   void reportAction(OBJECT_PTR_TYPE object, ARGS &&...args);
-  template<typename TYPE, typename... ARGS>
-  void reportAction(ARGS &&...args);
 
 private:
-  QPointer<QWidget> m_widget;
+  QVector<QWidget *> m_widgets;
 };
 
 template<typename TYPE>
-TYPE *ActionRecordStrategy::getWidgetAs() const {
-  const auto widget = getWidget();
+TYPE *ActionRecordStrategy::getWidgetAs(QWidget *widget) const {
   const auto specific_widget = qobject_cast<TYPE *>(widget);
-
   Q_ASSERT(widget == specific_widget);
-
   return specific_widget;
 }
 
@@ -69,11 +82,6 @@ void ActionRecordStrategy::reportAction(
   Q_EMIT actionReported(TYPE{
     getObjectAsQuery(object), getObjectAsId(object),
     std::forward<ARGS>(args)...});
-}
-
-template<typename TYPE, typename... ARGS>
-void ActionRecordStrategy::reportAction(ARGS &&...args) {
-  reportAction<TYPE>(getWidget(), std::forward<ARGS>(args)...);
 }
 
 /* ------------------------- ActionRecordWidgetStrategy --------------------- */
@@ -88,12 +96,13 @@ public:
   explicit ActionRecordWidgetStrategy(QObject *parent = nullptr);
   ~ActionRecordWidgetStrategy() override;
 
-  bool eventFilter(QObject *obj, QEvent *event) override;
+protected:
+  void handleEvent(QWidget *widget, QEvent *event) override;
 
 private Q_SLOTS:
-  void onOpenContextMenu();
-  void onClosed();
-  void onWindowStateChanged(Qt::WindowStates newStates);
+  void onOpenContextMenu(QWidget *widget);
+  void onClosed(QWidget *widget);
+  void onWindowStateChanged(QWidget *widget, Qt::WindowStates newStates);
 };
 
 /* ------------------------- ActionRecordButtonStrategy --------------------- */
@@ -113,9 +122,9 @@ protected:
   void installConnections(QWidget *widget);
 
 private Q_SLOTS:
-  void onPressed();
-  void onClicked();
-  void onToggled(bool checked);
+  void onPressed(QAbstractButton *button);
+  void onClicked(QAbstractButton *button);
+  void onToggled(QAbstractButton *button, bool checked);
 };
 
 /* ------------------------ ActionRecordComboBoxStrategy -------------------- */
@@ -135,7 +144,7 @@ protected:
   void installConnections(QWidget *widget) override;
 
 private Q_SLOTS:
-  void onCurrentIndexChanged(int index);
+  void onCurrentIndexChanged(QComboBox *combobox, int index);
 };
 
 /* ------------------------ ActionRecordSpinBoxStrategy --------------------- */
@@ -155,8 +164,8 @@ protected:
   void installConnections(QWidget *widget) override;
 
 private Q_SLOTS:
-  void onValueChanged(double value);
-  void onValueChanged(int value);
+  void onValueChanged(QDoubleSpinBox *spinbox, double value);
+  void onValueChanged(QSpinBox *spinbox, int value);
 };
 
 /* ------------------------- ActionRecordSliderStrategy --------------------- */
@@ -176,7 +185,7 @@ protected:
   void installConnections(QWidget *widget) override;
 
 private Q_SLOTS:
-  void onValueChanged(int value);
+  void onValueChanged(QAbstractSlider *slider, int value);
 };
 
 /* ------------------------- ActionRecordTabBarStrategy --------------------- */
@@ -197,9 +206,9 @@ protected:
   void removeConnections(QWidget *widget) override;
 
 private Q_SLOTS:
-  void onCurrentChanged(int index);
-  void onTabClosed(int index);
-  void onTabMoved(int from, int to);
+  void onCurrentChanged(QTabBar *tabbar, int index);
+  void onTabClosed(QTabBar *tabbar, int index);
+  void onTabMoved(QTabBar *tabbar, int from, int to);
 
 private:
   bool m_closing;
@@ -222,7 +231,7 @@ protected:
   void installConnections(QWidget *widget) override;
 
 private Q_SLOTS:
-  void onCurrentChanged(int index);
+  void onCurrentChanged(QToolBox *toolbox, int index);
 };
 
 /* -------------------------- ActionRecordMenuStrategy ---------------------- */
@@ -289,7 +298,7 @@ protected:
   void installConnections(QWidget *widget) override;
 
 private Q_SLOTS:
-  void onTextChanged(const QString &text);
+  void onTextChanged(QTextEdit *textedit, const QString &text);
 };
 
 /* ------------------------ ActionRecordLineEditStrategy -------------------- */
@@ -306,12 +315,12 @@ public:
   ~ActionRecordLineEditStrategy() override;
 
 protected:
+  void handleEvent(QWidget *widget, QEvent *event) override;
   void installConnections(QWidget *widget) override;
-  bool eventFilter(QObject *obj, QEvent *event) override;
 
 private Q_SLOTS:
-  void onTextChanged(const QString &text);
-  void onReturnPressed();
+  void onTextChanged(QLineEdit *lineedit, const QString &text);
+  void onReturnPressed(QLineEdit *lineedit);
 };
 
 /* ------------------------ ActionRecordItemViewStrategy -------------------- */
@@ -332,8 +341,8 @@ protected:
 
 private Q_SLOTS:
   void onDataChanged(
-    const QModelIndex &topLeft, const QModelIndex &bottomRight,
-    const QList<int> &roles);
+    QAbstractItemView *itemview, const QModelIndex &topLeft,
+    const QModelIndex &bottomRight, const QList<int> &roles);
 };
 
 }// namespace specter

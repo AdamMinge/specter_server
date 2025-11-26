@@ -3,24 +3,6 @@
 
 #include "specter/module.h"
 #include "specter/record/action.h"
-/* ------------------------------------ Qt ---------------------------------- */
-#include <QAbstractButton>
-#include <QAbstractItemView>
-#include <QAbstractSlider>
-#include <QComboBox>
-#include <QDoubleSpinBox>
-#include <QEvent>
-#include <QItemSelectionModel>
-#include <QKeyEvent>
-#include <QLineEdit>
-#include <QMenu>
-#include <QMenuBar>
-#include <QMouseEvent>
-#include <QSpinBox>
-#include <QTabBar>
-#include <QTextEdit>
-#include <QToolBox>
-#include <QToolButton>
 /* -------------------------------------------------------------------------- */
 
 namespace specter {
@@ -42,28 +24,26 @@ namespace specter {
 
 /* ---------------------------- ActionRecordStrategy ------------------------ */
 
-ActionRecordStrategy::ActionRecordStrategy(QObject *parent)
-    : QObject(parent), m_widget(nullptr) {}
+ActionRecordStrategy::ActionRecordStrategy(QObject *parent) : QObject(parent) {}
 
 ActionRecordStrategy::~ActionRecordStrategy() = default;
 
-void ActionRecordStrategy::setWidget(QWidget *widget) {
-  if (m_widget == widget) return;
+void ActionRecordStrategy::handleEvent(QObject *object, QEvent *event) {
+  auto widget = qobject_cast<QWidget *>(object);
+  Q_ASSERT(widget);
 
-  if (m_widget) {
-    removeConnections(m_widget);
-    m_widget->removeEventFilter(this);
+  if (!m_widgets.contains(object)) {
+    m_widgets.push_back(widget);
+    installConnections(widget);
+
+    connect(widget, &QObject::destroyed, this, [this, widget]() {
+      m_widgets.removeOne(widget);
+      removeConnections(widget);
+    });
   }
 
-  m_widget = widget;
-
-  if (m_widget) {
-    installConnections(m_widget);
-    m_widget->installEventFilter(this);
-  }
+  handleEvent(widget, event);
 }
-
-QWidget *ActionRecordStrategy::getWidget() const { return m_widget; }
 
 ObjectQuery ActionRecordStrategy::getObjectAsQuery(QObject *object) const {
   const auto query = searcher().getQuery(object);
@@ -75,12 +55,17 @@ ObjectId ActionRecordStrategy::getObjectAsId(QObject *object) const {
   return id;
 }
 
+void ActionRecordStrategy::handleEvent(QWidget *widget, QEvent *event) {
+  Q_UNUSED(widget);
+  Q_UNUSED(event);
+}
+
 void ActionRecordStrategy::installConnections(QWidget *widget) {
   Q_UNUSED(widget);
 }
 
 void ActionRecordStrategy::removeConnections(QWidget *widget) {
-  m_widget->disconnect(this);
+  widget->disconnect(this);
 }
 
 /* ------------------------- ActionRecordWidgetStrategy --------------------- */
@@ -92,40 +77,36 @@ ActionRecordWidgetStrategy::ActionRecordWidgetStrategy(QObject *parent)
 
 ActionRecordWidgetStrategy::~ActionRecordWidgetStrategy() = default;
 
-bool ActionRecordWidgetStrategy::eventFilter(QObject *obj, QEvent *event) {
-  if (auto widget = getWidget(); widget == obj) {
-    switch (event->type()) {
-      case QEvent::ContextMenu:
-        onOpenContextMenu();
-        break;
-      case QEvent::Close:
-        onClosed();
-        break;
-      case QEvent::WindowStateChange: {
-        auto stateEvent = static_cast<QWindowStateChangeEvent *>(event);
-        onWindowStateChanged(widget->windowState());
-        break;
-      }
+void ActionRecordWidgetStrategy::handleEvent(QWidget *widget, QEvent *event) {
+  switch (event->type()) {
+    case QEvent::ContextMenu:
+      onOpenContextMenu(widget);
+      break;
+    case QEvent::Close:
+      onClosed(widget);
+      break;
+    case QEvent::WindowStateChange: {
+      auto stateEvent = static_cast<QWindowStateChangeEvent *>(event);
+      onWindowStateChanged(widget, widget->windowState());
+      break;
     }
   }
-
-  return ActionRecordStrategy::eventFilter(obj, event);
 }
 
-void ActionRecordWidgetStrategy::onOpenContextMenu() {
-  reportAction<RecordedAction::ContextMenuOpened>();
+void ActionRecordWidgetStrategy::onOpenContextMenu(QWidget *widget) {
+  reportAction<RecordedAction::ContextMenuOpened>(widget);
 }
 
-void ActionRecordWidgetStrategy::onClosed() {
-  reportAction<RecordedAction::WindowClosed>();
+void ActionRecordWidgetStrategy::onClosed(QWidget *widget) {
+  reportAction<RecordedAction::WindowClosed>(widget);
 }
 
 void ActionRecordWidgetStrategy::onWindowStateChanged(
-  Qt::WindowStates newState) {
+  QWidget *widget, Qt::WindowStates newState) {
   if (newState == Qt::WindowMinimized) {
-    reportAction<RecordedAction::WindowMinimized>();
+    reportAction<RecordedAction::WindowMinimized>(widget);
   } else if (newState == Qt::WindowMaximized) {
-    reportAction<RecordedAction::WindowMaximized>();
+    reportAction<RecordedAction::WindowMaximized>(widget);
   }
 }
 
@@ -141,30 +122,28 @@ ActionRecordButtonStrategy::ActionRecordButtonStrategy(QObject *parent)
 ActionRecordButtonStrategy::~ActionRecordButtonStrategy() = default;
 
 void ActionRecordButtonStrategy::installConnections(QWidget *widget) {
-  auto button = qobject_cast<QAbstractButton *>(widget);
-  Q_ASSERT(button);
+  auto button = getWidgetAs<QAbstractButton>(widget);
 
-  connect(
-    button, &QAbstractButton::pressed, this,
-    &ActionRecordButtonStrategy::onPressed);
+  connect(button, &QAbstractButton::pressed, this, [this, button]() {
+    onPressed(button);
+  });
 }
 
-void ActionRecordButtonStrategy::onPressed() {
-  const auto button = getWidgetAs<QAbstractButton>();
-
+void ActionRecordButtonStrategy::onPressed(QAbstractButton *button) {
   if (button->isCheckable()) {
-    onToggled(!button->isChecked());
+    onToggled(button, !button->isChecked());
   } else {
-    onClicked();
+    onClicked(button);
   }
 }
 
-void ActionRecordButtonStrategy::onClicked() {
-  reportAction<RecordedAction::ButtonClicked>();
+void ActionRecordButtonStrategy::onClicked(QAbstractButton *button) {
+  reportAction<RecordedAction::ButtonClicked>(button);
 }
 
-void ActionRecordButtonStrategy::onToggled(bool checked) {
-  reportAction<RecordedAction::ButtonToggled>(checked);
+void ActionRecordButtonStrategy::onToggled(
+  QAbstractButton *button, bool checked) {
+  reportAction<RecordedAction::ButtonToggled>(button, checked);
 }
 
 /* ------------------------ ActionRecordComboBoxStrategy -------------------- */
@@ -177,16 +156,18 @@ ActionRecordComboBoxStrategy::ActionRecordComboBoxStrategy(QObject *parent)
 ActionRecordComboBoxStrategy::~ActionRecordComboBoxStrategy() = default;
 
 void ActionRecordComboBoxStrategy::installConnections(QWidget *widget) {
-  auto combobox = qobject_cast<QComboBox *>(widget);
-  Q_ASSERT(combobox);
+  auto combobox = getWidgetAs<QComboBox>(widget);
 
   connect(
     combobox, &QComboBox::currentIndexChanged, this,
-    &ActionRecordComboBoxStrategy::onCurrentIndexChanged);
+    [this, combobox](auto &&index) {
+      onCurrentIndexChanged(combobox, std::forward<decltype(index)>(index));
+    });
 }
 
-void ActionRecordComboBoxStrategy::onCurrentIndexChanged(int index) {
-  reportAction<RecordedAction::ComboBoxCurrentChanged>(index);
+void ActionRecordComboBoxStrategy::onCurrentIndexChanged(
+  QComboBox *combobox, int index) {
+  reportAction<RecordedAction::ComboBoxCurrentChanged>(combobox, index);
 }
 
 /* ------------------------ ActionRecordSpinBoxStrategy --------------------- */
@@ -203,23 +184,27 @@ ActionRecordSpinBoxStrategy::~ActionRecordSpinBoxStrategy() = default;
 void ActionRecordSpinBoxStrategy::installConnections(QWidget *widget) {
   if (auto spinbox = qobject_cast<QSpinBox *>(widget); spinbox) {
     connect(
-      spinbox, &QSpinBox::valueChanged, this,
-      QOverload<int>::of(&ActionRecordSpinBoxStrategy::onValueChanged));
+      spinbox, &QSpinBox::valueChanged, this, [this, spinbox](auto &&value) {
+        onValueChanged(spinbox, std::forward<decltype(value)>(value));
+      });
   } else if (auto spinbox = qobject_cast<QDoubleSpinBox *>(widget); spinbox) {
     connect(
       spinbox, &QDoubleSpinBox::valueChanged, this,
-      QOverload<double>::of(&ActionRecordSpinBoxStrategy::onValueChanged));
+      [this, spinbox](auto &&value) {
+        onValueChanged(spinbox, std::forward<decltype(value)>(value));
+      });
   } else {
     Q_ASSERT(false);
   }
 }
 
-void ActionRecordSpinBoxStrategy::onValueChanged(double value) {
-  reportAction<RecordedAction::DoubleSpinBoxValueChanged>(value);
+void ActionRecordSpinBoxStrategy::onValueChanged(
+  QDoubleSpinBox *spinbox, double value) {
+  reportAction<RecordedAction::DoubleSpinBoxValueChanged>(spinbox, value);
 }
 
-void ActionRecordSpinBoxStrategy::onValueChanged(int value) {
-  reportAction<RecordedAction::SpinBoxValueChanged>(value);
+void ActionRecordSpinBoxStrategy::onValueChanged(QSpinBox *spinbox, int value) {
+  reportAction<RecordedAction::SpinBoxValueChanged>(spinbox, value);
 }
 
 /* ------------------------- ActionRecordSliderStrategy --------------------- */
@@ -234,16 +219,17 @@ ActionRecordSliderStrategy::ActionRecordSliderStrategy(QObject *parent)
 ActionRecordSliderStrategy::~ActionRecordSliderStrategy() = default;
 
 void ActionRecordSliderStrategy::installConnections(QWidget *widget) {
-  auto slider = qobject_cast<QAbstractSlider *>(widget);
-  Q_ASSERT(slider);
+  auto slider = getWidgetAs<QAbstractSlider>(widget);
 
   connect(
-    slider, &QAbstractSlider::valueChanged, this,
-    &ActionRecordSliderStrategy::onValueChanged);
+    slider, &QAbstractSlider::valueChanged, this, [this, slider](auto &&value) {
+      onValueChanged(slider, std::forward<decltype(value)>(value));
+    });
 }
 
-void ActionRecordSliderStrategy::onValueChanged(int value) {
-  reportAction<RecordedAction::SliderValueChanged>(value);
+void ActionRecordSliderStrategy::onValueChanged(
+  QAbstractSlider *slider, int value) {
+  reportAction<RecordedAction::SliderValueChanged>(slider, value);
 }
 
 /* ------------------------- ActionRecordTabBarStrategy --------------------- */
@@ -256,14 +242,14 @@ ActionRecordTabBarStrategy::ActionRecordTabBarStrategy(QObject *parent)
 ActionRecordTabBarStrategy::~ActionRecordTabBarStrategy() = default;
 
 void ActionRecordTabBarStrategy::installConnections(QWidget *widget) {
-  auto tabbar = qobject_cast<QTabBar *>(widget);
-  Q_ASSERT(tabbar);
+  auto tabbar = getWidgetAs<QTabBar>(widget);
 
-  connect(
-    tabbar, &QTabBar::tabMoved, this, &ActionRecordTabBarStrategy::onTabMoved);
+  connect(tabbar, &QTabBar::tabMoved, this, [this, tabbar](auto from, auto to) {
+    onTabMoved(tabbar, from, to);
+  });
 
-  connect(tabbar, &QTabBar::currentChanged, this, [this](auto i) {
-    if (!m_closing) onCurrentChanged(i);
+  connect(tabbar, &QTabBar::currentChanged, this, [this, tabbar](auto i) {
+    if (!m_closing) onCurrentChanged(tabbar, i);
     m_closing = false;
   });
 
@@ -278,7 +264,7 @@ void ActionRecordTabBarStrategy::installConnections(QWidget *widget) {
 
           const auto i = findTabIndex(tabbar, button);
           Q_ASSERT(i >= 0);
-          onTabClosed(i);
+          onTabClosed(tabbar, i);
         });
     }
   }
@@ -286,10 +272,7 @@ void ActionRecordTabBarStrategy::installConnections(QWidget *widget) {
 
 void ActionRecordTabBarStrategy::removeConnections(QWidget *widget) {
   ActionRecordWidgetStrategy::removeConnections(widget);
-
-  auto tabbar = qobject_cast<QTabBar *>(widget);
-  Q_ASSERT(tabbar);
-
+  auto tabbar = getWidgetAs<QTabBar>(widget);
   if (tabbar->tabsClosable()) {
     for (auto i = 0; i < tabbar->count(); ++i) {
       const auto button = qobject_cast<QAbstractButton *>(
@@ -300,16 +283,16 @@ void ActionRecordTabBarStrategy::removeConnections(QWidget *widget) {
   }
 }
 
-void ActionRecordTabBarStrategy::onCurrentChanged(int index) {
-  reportAction<RecordedAction::TabCurrentChanged>(index);
+void ActionRecordTabBarStrategy::onCurrentChanged(QTabBar *tabbar, int index) {
+  reportAction<RecordedAction::TabCurrentChanged>(tabbar, index);
 }
 
-void ActionRecordTabBarStrategy::onTabClosed(int index) {
-  reportAction<RecordedAction::TabClosed>(index);
+void ActionRecordTabBarStrategy::onTabClosed(QTabBar *tabbar, int index) {
+  reportAction<RecordedAction::TabClosed>(tabbar, index);
 }
 
-void ActionRecordTabBarStrategy::onTabMoved(int from, int to) {
-  reportAction<RecordedAction::TabMoved>(from, to);
+void ActionRecordTabBarStrategy::onTabMoved(QTabBar *tabbar, int from, int to) {
+  reportAction<RecordedAction::TabMoved>(tabbar, from, to);
 }
 
 /* ------------------------- ActionRecordToolBoxStrategy -------------------- */
@@ -322,16 +305,16 @@ ActionRecordToolBoxStrategy::ActionRecordToolBoxStrategy(QObject *parent)
 ActionRecordToolBoxStrategy::~ActionRecordToolBoxStrategy() = default;
 
 void ActionRecordToolBoxStrategy::installConnections(QWidget *widget) {
-  auto toolbox = qobject_cast<QToolBox *>(widget);
-  Q_ASSERT(toolbox);
+  auto toolbox = getWidgetAs<QToolBox>(widget);
 
   connect(
     toolbox, &QToolBox::currentChanged, this,
-    &ActionRecordToolBoxStrategy::onCurrentChanged);
+    [this, toolbox](auto index) { onCurrentChanged(toolbox, index); });
 }
 
-void ActionRecordToolBoxStrategy::onCurrentChanged(int index) {
-  reportAction<RecordedAction::ToolBoxCurrentChanged>(index);
+void ActionRecordToolBoxStrategy::onCurrentChanged(
+  QToolBox *toolbox, int index) {
+  reportAction<RecordedAction::ToolBoxCurrentChanged>(toolbox, index);
 }
 
 /* ------------------------- ActionRecordMenuStrategy ---------------------- */
@@ -344,19 +327,19 @@ ActionRecordMenuStrategy::ActionRecordMenuStrategy(QObject *parent)
 ActionRecordMenuStrategy::~ActionRecordMenuStrategy() = default;
 
 void ActionRecordMenuStrategy::installConnections(QWidget *widget) {
-  auto menu = qobject_cast<QMenu *>(widget);
-  Q_ASSERT(menu);
+  auto menu = getWidgetAs<QMenu>(widget);
 
-  connect(
-    menu, &QMenu::triggered, this, &ActionRecordMenuStrategy::onTriggered);
+  connect(menu, &QMenu::triggered, this, [this, menu](auto action) {
+    onTriggered(action);
+  });
 
-  connect(menu, &QMenu::hovered, this, &ActionRecordMenuStrategy::onHovered);
+  connect(menu, &QMenu::hovered, this, [this, menu](auto action) {
+    onHovered(action);
+  });
 }
 
 void ActionRecordMenuStrategy::onTriggered(QAction *action) {
   if (!action || !action->isEnabled()) return;
-  if (action->menu()) return;
-
   reportAction<RecordedAction::ActionTriggered>(action);
 }
 
@@ -379,15 +362,15 @@ ActionRecordMenuBarStrategy::ActionRecordMenuBarStrategy(QObject *parent)
 ActionRecordMenuBarStrategy::~ActionRecordMenuBarStrategy() = default;
 
 void ActionRecordMenuBarStrategy::installConnections(QWidget *widget) {
-  auto menubar = qobject_cast<QMenuBar *>(widget);
-  Q_ASSERT(menubar);
+  auto menubar = getWidgetAs<QMenuBar>(widget);
 
-  connect(
-    menubar, &QMenuBar::triggered, this,
-    &ActionRecordMenuBarStrategy::onTriggered);
+  connect(menubar, &QMenuBar::triggered, this, [this](auto action) {
+    onTriggered(action);
+  });
 
-  connect(
-    menubar, &QMenuBar::hovered, this, &ActionRecordMenuBarStrategy::onHovered);
+  connect(menubar, &QMenuBar::hovered, this, [this](auto action) {
+    onHovered(action);
+  });
 }
 
 void ActionRecordMenuBarStrategy::onTriggered(QAction *action) {
@@ -414,16 +397,16 @@ ActionRecordTextEditStrategy::ActionRecordTextEditStrategy(QObject *parent)
 ActionRecordTextEditStrategy::~ActionRecordTextEditStrategy() = default;
 
 void ActionRecordTextEditStrategy::installConnections(QWidget *widget) {
-  auto textedit = qobject_cast<QTextEdit *>(widget);
-  Q_ASSERT(textedit);
+  auto textedit = getWidgetAs<QTextEdit>(widget);
 
   connect(textedit, &QTextEdit::textChanged, this, [this, textedit]() {
-    onTextChanged(textedit->toPlainText());
+    onTextChanged(textedit, textedit->toPlainText());
   });
 }
 
-void ActionRecordTextEditStrategy::onTextChanged(const QString &text) {
-  reportAction<RecordedAction::TextEditTextChanged>(text);
+void ActionRecordTextEditStrategy::onTextChanged(
+  QTextEdit *textedit, const QString &text) {
+  reportAction<RecordedAction::TextEditTextChanged>(textedit, text);
 }
 
 /* ------------------------ ActionRecordLineEditStrategy -------------------- */
@@ -436,39 +419,36 @@ ActionRecordLineEditStrategy::ActionRecordLineEditStrategy(QObject *parent)
 ActionRecordLineEditStrategy::~ActionRecordLineEditStrategy() = default;
 
 void ActionRecordLineEditStrategy::installConnections(QWidget *widget) {
-  auto lineedit = qobject_cast<QLineEdit *>(widget);
-  Q_ASSERT(lineedit);
+  auto lineedit = getWidgetAs<QLineEdit>(widget);
 
   connect(
-    lineedit, &QLineEdit::textChanged, this,
-    &ActionRecordLineEditStrategy::onTextChanged);
+    lineedit, &QLineEdit::textChanged, this, [this, lineedit](auto &&text) {
+      onTextChanged(lineedit, std::forward<decltype(text)>(text));
+    });
 }
 
-bool ActionRecordLineEditStrategy::eventFilter(QObject *obj, QEvent *event) {
-  if (auto widget = getWidget(); widget == obj) {
-    switch (event->type()) {
-      case QEvent::KeyPress: {
-        const auto key_event = static_cast<QKeyEvent *>(event);
-        const auto pressed_key = key_event->key();
-        if (pressed_key != Qt::Key_Return && pressed_key != Qt::Key_Enter)
-          break;
+void ActionRecordLineEditStrategy::handleEvent(QWidget *widget, QEvent *event) {
+  switch (event->type()) {
+    case QEvent::KeyPress: {
+      const auto key_event = static_cast<QKeyEvent *>(event);
+      const auto pressed_key = key_event->key();
+      if (pressed_key != Qt::Key_Return && pressed_key != Qt::Key_Enter) break;
 
-        onReturnPressed();
+      auto lineedit = getWidgetAs<QLineEdit>(widget);
+      onReturnPressed(lineedit);
 
-        break;
-      }
+      break;
     }
   }
-
-  return ActionRecordWidgetStrategy::eventFilter(obj, event);
 }
 
-void ActionRecordLineEditStrategy::onTextChanged(const QString &text) {
-  reportAction<RecordedAction::LineEditTextChanged>(text);
+void ActionRecordLineEditStrategy::onTextChanged(
+  QLineEdit *lineedit, const QString &text) {
+  reportAction<RecordedAction::LineEditTextChanged>(lineedit, text);
 }
 
-void ActionRecordLineEditStrategy::onReturnPressed() {
-  reportAction<RecordedAction::LineEditReturnPressed>();
+void ActionRecordLineEditStrategy::onReturnPressed(QLineEdit *lineedit) {
+  reportAction<RecordedAction::LineEditReturnPressed>(lineedit);
 }
 
 /* ------------------------ ActionRecordItemViewStrategy -------------------- */
@@ -483,20 +463,24 @@ ActionRecordItemViewStrategy::ActionRecordItemViewStrategy(QObject *parent)
 ActionRecordItemViewStrategy::~ActionRecordItemViewStrategy() = default;
 
 void ActionRecordItemViewStrategy::installConnections(QWidget *widget) {
-  auto itemview = qobject_cast<QAbstractItemView *>(widget);
-  Q_ASSERT(itemview);
+  auto itemview = getWidgetAs<QAbstractItemView>(widget);
 
   auto model = itemview->model();
   if (model) {
     connect(
       model, &QAbstractItemModel::dataChanged, this,
-      &ActionRecordItemViewStrategy::onDataChanged);
+      [this, itemview](auto &&topLeft, auto &&bottomRight, auto &&roles) {
+        onDataChanged(
+          itemview, std::forward<decltype(topLeft)>(topLeft),
+          std::forward<decltype(bottomRight)>(bottomRight),
+          std::forward<decltype(roles)>(roles));
+      });
   }
 }
 
 void ActionRecordItemViewStrategy::onDataChanged(
-  const QModelIndex &topLeft, const QModelIndex &bottomRight,
-  const QList<int> &roles) {
+  QAbstractItemView *itemview, const QModelIndex &topLeft,
+  const QModelIndex &bottomRight, const QList<int> &roles) {
   /* TODO */
 }
 

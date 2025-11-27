@@ -82,6 +82,8 @@ private:
   InteractionState state(QWidget *widget) const;
   void setState(QWidget *widget, InteractionState state);
 
+  void tryInstallConnections(QWidget *widget);
+
 private:
   QVector<QWidget *> m_widgets;
   QHash<QWidget *, InteractionState> m_state;

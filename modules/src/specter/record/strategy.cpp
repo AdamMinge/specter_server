@@ -32,27 +32,9 @@ void ActionRecordStrategy::handleEvent(QObject *object, QEvent *event) {
   auto widget = dynamic_cast<QWidget *>(object);
   Q_ASSERT(widget);
 
-  switch (event->type()) {
-    case QEvent::Polish:
-    case QEvent::Show:
-    case QEvent::PolishRequest:
-      if (!m_widgets.contains(widget)) {
-        QMetaObject::invokeMethod(
-          widget,
-          [this, widget]() {
-            if (!m_widgets.contains(widget)) {
-              m_widgets.push_back(widget);
-              installConnections(widget);
-              connect(widget, &QObject::destroyed, this, [this, widget]() {
-                m_widgets.removeOne(widget);
-                removeConnections(widget);
-              });
-            }
-          },
-          Qt::QueuedConnection);
-      }
-      break;
+  tryInstallConnections(widget);
 
+  switch (event->type()) {
     case QEvent::MouseButtonPress:
       setState(widget, InteractionState::UserPressed);
       break;
@@ -114,6 +96,24 @@ void ActionRecordStrategy::setState(QWidget *widget, InteractionState state) {
   if (state == InteractionState::None) m_state.remove(widget);
   else
     m_state[widget] = state;
+}
+
+void ActionRecordStrategy::tryInstallConnections(QWidget *widget) {
+  if (m_widgets.contains(widget)) return;
+
+  m_widgets.push_back(widget);
+
+  QMetaObject::invokeMethod(
+    widget,
+    [this, widget]() {
+      installConnections(widget);
+
+      connect(widget, &QObject::destroyed, this, [this, widget]() {
+        m_widgets.removeOne(widget);
+        removeConnections(widget);
+      });
+    },
+    Qt::QueuedConnection);
 }
 
 /* ------------------------- ActionRecordWidgetStrategy --------------------- */

@@ -38,7 +38,7 @@ StrategyManager::StrategyManager(QObject *parent) : QObject(parent) {
 StrategyManager::~StrategyManager() = default;
 
 void StrategyManager::handleEvent(QObject *object, QEvent *event) {
-  if (auto strategy = findStrategy(object))
+  if (auto strategy = findStrategy(object); strategy)
     strategy->handleEvent(object, event);
 }
 
@@ -47,8 +47,8 @@ ActionRecordStrategy *StrategyManager::findStrategy(QObject *object) const {
 
   auto meta_object = object->metaObject();
   while (meta_object) {
-    const auto type_id = meta_object->metaType().id();
-    auto it = m_strategies.find(type_id);
+    auto class_name = meta_object->className();
+    auto it = m_strategies.find(class_name);
     if (it != m_strategies.end()) { return it->second; }
     meta_object = meta_object->superClass();
   }
@@ -87,8 +87,9 @@ void ActionRecorder::stop() {
 bool ActionRecorder::isRecording() const { return m_recording; }
 
 bool ActionRecorder::eventFilter(QObject *object, QEvent *event) {
+  auto result = QObject::eventFilter(object, event);
   m_strategy_manager->handleEvent(object, event);
-  return QObject::eventFilter(object, event);
+  return result;
 }
 
 /* ----------------------------- ActionRecorderQueue ------------------------ */

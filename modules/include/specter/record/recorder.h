@@ -39,13 +39,13 @@ private:
   [[nodiscard]] ActionRecordStrategy *findStrategy(QObject *object) const;
 
 private:
-  std::unordered_map<int, ActionRecordStrategy *> m_strategies;
+  std::unordered_map<QString, ActionRecordStrategy *> m_strategies;
 };
 
 template<typename STRATEGY>
 void StrategyManager::registerStrategy() {
   auto [iter, inserted] = m_strategies.insert(
-    std::make_pair(STRATEGY::getType(), new STRATEGY(this)));
+    std::make_pair(STRATEGY::getClassName(), new STRATEGY(this)));
   Q_ASSERT(inserted);
 
   connect(

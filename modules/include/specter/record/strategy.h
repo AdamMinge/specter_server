@@ -89,7 +89,7 @@ private:
 
 template<typename TYPE>
 TYPE *ActionRecordStrategy::getWidgetAs(QWidget *widget) const {
-  const auto specific_widget = qobject_cast<TYPE *>(widget);
+  const auto specific_widget = dynamic_cast<TYPE *>(widget);
   Q_ASSERT(widget == specific_widget);
   return specific_widget;
 }
@@ -116,7 +116,7 @@ class LIB_SPECTER_API ActionRecordWidgetStrategy : public ActionRecordStrategy {
   Q_OBJECT
 
 public:
-  [[nodiscard]] static int getType();
+  [[nodiscard]] static const char *getClassName();
 
 public:
   explicit ActionRecordWidgetStrategy(QObject *parent = nullptr);
@@ -138,7 +138,7 @@ class LIB_SPECTER_API ActionRecordButtonStrategy
   Q_OBJECT
 
 public:
-  [[nodiscard]] static int getType();
+  [[nodiscard]] static const char *getClassName();
 
 public:
   explicit ActionRecordButtonStrategy(QObject *parent = nullptr);
@@ -160,7 +160,7 @@ class LIB_SPECTER_API ActionRecordComboBoxStrategy
   Q_OBJECT
 
 public:
-  [[nodiscard]] static int getType();
+  [[nodiscard]] static const char *getClassName();
 
 public:
   explicit ActionRecordComboBoxStrategy(QObject *parent = nullptr);
@@ -180,7 +180,7 @@ class LIB_SPECTER_API ActionRecordSpinBoxStrategy
   Q_OBJECT
 
 public:
-  [[nodiscard]] static int getType();
+  [[nodiscard]] static const char *getClassName();
 
 public:
   explicit ActionRecordSpinBoxStrategy(QObject *parent = nullptr);
@@ -201,7 +201,7 @@ class LIB_SPECTER_API ActionRecordSliderStrategy
   Q_OBJECT
 
 public:
-  [[nodiscard]] static int getType();
+  [[nodiscard]] static const char *getClassName();
 
 public:
   explicit ActionRecordSliderStrategy(QObject *parent = nullptr);
@@ -221,7 +221,7 @@ class LIB_SPECTER_API ActionRecordTabBarStrategy
   Q_OBJECT
 
 public:
-  [[nodiscard]] static int getType();
+  [[nodiscard]] static const char *getClassName();
 
 public:
   explicit ActionRecordTabBarStrategy(QObject *parent = nullptr);
@@ -247,7 +247,7 @@ class LIB_SPECTER_API ActionRecordToolBoxStrategy
   Q_OBJECT
 
 public:
-  [[nodiscard]] static int getType();
+  [[nodiscard]] static const char *getClassName();
 
 public:
   explicit ActionRecordToolBoxStrategy(QObject *parent = nullptr);
@@ -266,7 +266,7 @@ class LIB_SPECTER_API ActionRecordMenuStrategy : public ActionRecordStrategy {
   Q_OBJECT
 
 public:
-  [[nodiscard]] static int getType();
+  [[nodiscard]] static const char *getClassName();
 
 public:
   explicit ActionRecordMenuStrategy(QObject *parent = nullptr);
@@ -290,7 +290,7 @@ class LIB_SPECTER_API ActionRecordMenuBarStrategy
   Q_OBJECT
 
 public:
-  [[nodiscard]] static int getType();
+  [[nodiscard]] static const char *getClassName();
 
 public:
   explicit ActionRecordMenuBarStrategy(QObject *parent = nullptr);
@@ -314,7 +314,7 @@ class LIB_SPECTER_API ActionRecordTextEditStrategy
   Q_OBJECT
 
 public:
-  [[nodiscard]] static int getType();
+  [[nodiscard]] static const char *getClassName();
 
 public:
   explicit ActionRecordTextEditStrategy(QObject *parent = nullptr);
@@ -334,7 +334,7 @@ class LIB_SPECTER_API ActionRecordLineEditStrategy
   Q_OBJECT
 
 public:
-  [[nodiscard]] static int getType();
+  [[nodiscard]] static const char *getClassName();
 
 public:
   explicit ActionRecordLineEditStrategy(QObject *parent = nullptr);
@@ -356,7 +356,7 @@ class LIB_SPECTER_API ActionRecordItemViewStrategy
   Q_OBJECT
 
 public:
-  [[nodiscard]] static int getType();
+  [[nodiscard]] static const char *getClassName();
 
 public:
   explicit ActionRecordItemViewStrategy(QObject *parent = nullptr);

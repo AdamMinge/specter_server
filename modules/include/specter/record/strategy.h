@@ -43,6 +43,15 @@ class LIB_SPECTER_API ActionRecordStrategy : public QObject {
   Q_OBJECT
 
 public:
+  enum class InteractionState {
+    None,
+    UserPressed,
+    UserTyping,
+    UserScrolling,
+    UserEditing
+  };
+
+public:
   explicit ActionRecordStrategy(QObject *parent = nullptr);
   ~ActionRecordStrategy() override;
 
@@ -57,15 +66,25 @@ Q_SIGNALS:
   void actionReported(const RecordedAction &action);
 
 protected:
-  virtual void handleEvent(QWidget *widget, QEvent *event);
+  virtual void processEvent(QWidget *widget, QEvent *event);
   virtual void installConnections(QWidget *widget);
   virtual void removeConnections(QWidget *widget);
 
   template<typename TYPE, QObjectPtrConcept OBJECT_PTR_TYPE, typename... ARGS>
   void reportAction(OBJECT_PTR_TYPE object, ARGS &&...args);
 
+  template<typename TYPE, QObjectPtrConcept OBJECT_PTR_TYPE, typename... ARGS>
+  bool tryReportAction(OBJECT_PTR_TYPE object, ARGS &&...args);
+
+  bool userInitiated(QWidget *widget);
+
+private:
+  InteractionState state(QWidget *widget) const;
+  void setState(QWidget *widget, InteractionState state);
+
 private:
   QVector<QWidget *> m_widgets;
+  QHash<QWidget *, InteractionState> m_state;
 };
 
 template<typename TYPE>
@@ -82,6 +101,15 @@ void ActionRecordStrategy::reportAction(
     TYPE{getObjectAsQuery(object), std::forward<ARGS>(args)...});
 }
 
+template<typename TYPE, QObjectPtrConcept OBJECT_PTR_TYPE, typename... ARGS>
+bool ActionRecordStrategy::tryReportAction(
+  OBJECT_PTR_TYPE object, ARGS &&...args) {
+  if (!userInitiated(object)) return false;
+
+  reportAction<TYPE>(object, std::forward<ARGS>(args)...);
+  return true;
+}
+
 /* ------------------------- ActionRecordWidgetStrategy --------------------- */
 
 class LIB_SPECTER_API ActionRecordWidgetStrategy : public ActionRecordStrategy {
@@ -95,7 +123,7 @@ public:
   ~ActionRecordWidgetStrategy() override;
 
 protected:
-  void handleEvent(QWidget *widget, QEvent *event) override;
+  void processEvent(QWidget *widget, QEvent *event) override;
 
 private Q_SLOTS:
   void onOpenContextMenu(QWidget *widget);
@@ -313,7 +341,7 @@ public:
   ~ActionRecordLineEditStrategy() override;
 
 protected:
-  void handleEvent(QWidget *widget, QEvent *event) override;
+  void processEvent(QWidget *widget, QEvent *event) override;
   void installConnections(QWidget *widget) override;
 
 private Q_SLOTS:
